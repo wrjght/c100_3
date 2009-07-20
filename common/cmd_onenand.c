@@ -10,6 +10,8 @@
 
 #include <common.h>
 
+#if defined(CONFIG_ONENAND)
+
 #if defined(CONFIG_S3C64XX) || defined(CONFIG_S5PC1XX)
 
 /*
@@ -676,4 +678,7 @@ U_BOOT_CMD(onebbcheck,    3,  0,  do_onenand_bbcheck,
 #endif
 
 #endif	/* end of CONFIG_S3C64XX */
+
+#endif  /* end of CONFIG_ONENAND */
+	
 

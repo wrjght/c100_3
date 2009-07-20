@@ -22,7 +22,7 @@
 
 #include <common.h>
 
-//#ifdef CONFIG_ONENAND
+#ifdef CONFIG_ONENAND
 #include <s3c_onenand.h>
 #include <regs.h>
 
@@ -176,4 +176,4 @@ int board_onenand_init (struct onenand_chip *onenand)
 
 	return 0;
 }
-//#endif /* CONFIG_ONENAND */
+#endif /* CONFIG_ONENAND */

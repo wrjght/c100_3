@@ -15,7 +15,7 @@
 
 #include <common.h>
 
-/*#ifdef CONFIG_CMD_ONENAND*/
+#ifdef CONFIG_CMD_ONENAND
 
 #if defined(CONFIG_S3C64XX) || defined(CONFIG_S5PC1XX)
 
@@ -88,4 +88,4 @@ void onenand_init(void)
 
 #endif
 
-//#endif	/* CONFIG_CMD_ONENAND */
+#endif	/* CONFIG_CMD_ONENAND */

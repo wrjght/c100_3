@@ -13,53 +13,58 @@ mem_ctrl_asm_init:
 	cmp	r2, #0x1
 	beq	onenand_pop
 
+#if 0	// charles
+;        b	exit_cpu_init  
+#endif
+
 single:
-        ldr     r1, =0x003B3B00                         @Phycontrol0 DLL parameter setting
+
+        ldr     r1, =0x6E101000                         @Phycontrol0 DLL parameter setting
         str     r1, [r0, #DMC_PHYCONTROL0]
 
-        ldr     r1, =0x00000004                         @Phycontrol1 DLL parameter setting
+        ldr     r1, =0x000000F4                         @Phycontrol1 DLL parameter setting
         str     r1, [r0, #DMC_PHYCONTROL1]
 
         ldr     r1, =0x00000000                         @Phycontrol2 DLL parameter setting
         str     r1, [r0, #DMC_PHYCONTROL2]
 
-        ldr     r1, =0x003B3B02                         @Dll on
+        ldr     r1, =0x6E101002                         @Dll on
         str     r1, [r0, #DMC_PHYCONTROL0]
 
-        ldr     r1, =0x003B3B03                         @dll start
+        ldr     r1, =0x6E101003                         @dll start
         str     r1, [r0, #DMC_PHYCONTROL0]
 
-        ldr     r1, =0x6A3B3B03                         @Force Value locking
+        ldr     r1, =0x54101003                         @Force Value locking
         str     r1, [r0, #DMC_PHYCONTROL0]
 
-        ldr     r1, =0x6A3B3B01                         @Dll off
+        ldr     r1, =0x54101001                         @Dll off
         str     r1, [r0, #DMC_PHYCONTROL0]
 
-        ldr     r1, =0xFF001010                         @auto refresh off
+        ldr     r1, =0x00FF2010                         @auto refresh off
         str     r1, [r0, #DMC_CONCONTROL]
 
-        ldr     r1, =0xFF212100                         @Dll off
+        ldr     r1, =0x00212400                         @ BL=4 , 2 chip , DDR2
         str     r1, [r0, #DMC_MEMCONTROL]
 
-        ldr     r1, =0x20F80312
-        str     r1, [r0, #DMC_MEMCONFIG0]
+        ldr     r1, =0x20F00313							@ 128MB config , 8banks , linear, Row=13bit,COL=10bit
+        str     r1, [r0, #DMC_MEMCONFIG0]			
 
-        ldr     r1, =0x40F80312
+        ldr     r1, =0x40F00313
         str     r1, [r0, #DMC_MEMCONFIG1]
 
         ldr     r1, =0x20000000
         str     r1, [r0, #DMC_PRECHCONFIG]
 
-	ldr     r1, =0x0000004E
+		ldr     r1, =0x0000050E							@7.8us*200MHz=0x618, 7.8us*166MHz=1294(0x50E)
         str     r1, [r0, #DMC_TIMINGAREF]
 
-        ldr     r1, =0x0C233287                         @TimingRow      @133MHz
+        ldr     r1, =0x16233288                         @TimingRow      @166MHz
         str     r1, [r0, #DMC_TIMINGROW]
 
-        ldr     r1, =0x12130005
+        ldr     r1, =0x24250304							@CL=5
         str     r1, [r0, #DMC_TIMINGDATA]
-
-        ldr     r1, =0x0E120122                         @Timing Power
+  
+        ldr     r1, =0x07c80232                         @Timing Power
         str     r1, [r0, #DMC_TIMINGPOWER]
 
         ldr     r1, =0x07000000                         @chip0 Deselect
@@ -68,40 +73,50 @@ single:
         ldr     r1, =0x01000000                         @chip0 PALL
         str     r1, [r0, #DMC_DIRECTCMD]
 
+        ldr     r1, =0x00020000                         @chip0 EMRS2
+        str     r1, [r0, #DMC_DIRECTCMD]
+
+        ldr     r1, =0x00030000                         @chip0 EMRS3
+        str     r1, [r0, #DMC_DIRECTCMD]
+
+        ldr     r1, =0x00010400                         @chip0 EMRS1 (MEM DLL on = DQS# disable)
+        str     r1, [r0, #DMC_DIRECTCMD]
+
+        ldr     r1, =0x00000552                         @chip0 MRS (MEM DLL reset) CL=5
+        str     r1, [r0, #DMC_DIRECTCMD]
+
+        ldr     r1, =0x01000000                         @chip0 PALL
+        str     r1, [r0, #DMC_DIRECTCMD]
+        
         ldr     r1, =0x05000000                         @chip0 REFA
         str     r1, [r0, #DMC_DIRECTCMD]
 
         ldr     r1, =0x05000000                         @chip0 REFA
         str     r1, [r0, #DMC_DIRECTCMD]
 
-        ldr     r1, =0x00000032                         @chip0 MRS
+        ldr     r1, =0x00000452                         @chip0 MRS (MEM DLL unreset) , BL=4 , CL=5
         str     r1, [r0, #DMC_DIRECTCMD]
 
-        ldr     r1, =0x07100000                         @chip1 Deselect
+        ldr     r1, =0x00010780                         @chip0 EMRS1 (OCD default)
         str     r1, [r0, #DMC_DIRECTCMD]
 
-        ldr     r1, =0x01100000                         @chip1 PALL
-        str     r1, [r0, #DMC_DIRECTCMD]
+        ldr     r1, =0x00010400                         @chip0 EMRS1 (OCD exit)
+        str     r1, [r0, #DMC_DIRECTCMD]        
 
-        ldr     r1, =0x05100000                         @chip1 REFA
-        str     r1, [r0, #DMC_DIRECTCMD]
-
-        ldr     r1, =0x05100000                         @chip1 REFA
-        str     r1, [r0, #DMC_DIRECTCMD]
-
-        ldr     r1, =0x00100032                         @chip1 MRS
-        str     r1, [r0, #DMC_DIRECTCMD]
-
-        ldr     r1, =0xFF001030                         @ConControl auto refresh on
+        ldr     r1, =0x00FF20B0                         @ConControl PHY driving , auto refresh on , out of order scheduling
         str     r1, [r0, #DMC_CONCONTROL]
 
         ldr     r1, =0x00100002                         @PwrdnConfig
         str     r1, [r0, #DMC_PWRDNCONFIG]
 
-        ldr     r1, =0xFF212100                         @MemControl
+#if 0	// charles
+;        ldr     r1, =0xFF212100                         @MemControl
+#endif
+        ldr     r1, =0xFF212400                         @MemControl
         str     r1, [r0, #DMC_MEMCONTROL]
 
         b	exit_cpu_init
+
 onenand_pop:
 	ldr	r1, =0x50101000				@Phycontrol0 DLL parameter setting
 	str	r1, [r0, #DMC_PHYCONTROL0]

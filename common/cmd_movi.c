@@ -467,6 +467,7 @@ U_BOOT_CMD(
 	"movi write {sector#} {bytes(hex)} {addr} - Write data to moviNAND sector#\n"
 );
 
+#if defined(CONFIG_CMD_NAND)
 int do_insnand(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
 {
 	size_t total = CFG_ENV_OFFSET;
@@ -486,3 +487,4 @@ U_BOOT_CMD(
 	"insnand - install SD/MMC bootloader image to NAND flash\n",
 	": install SD/MMC bootloader to NAND flash\n"
 );
+#endif

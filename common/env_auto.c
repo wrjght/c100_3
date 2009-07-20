@@ -140,6 +140,7 @@ int env_init(void)
  */
 int saveenv_nand(void)
 {
+#ifdef CONFIG_NAND
 	size_t total;
 	int ret = 0;
 
@@ -162,10 +163,12 @@ int saveenv_nand(void)
 
 	puts("done\n");
 	return ret;
+#endif	
 }
 
 int saveenv_nand_adv(void)
 {
+#ifdef CONFIG_NAND
 	size_t total;
 	int ret = 0;
 
@@ -201,6 +204,7 @@ int saveenv_nand_adv(void)
 	free(tmp);
 
 	return ret;
+#endif	
 }
 
 int saveenv_movinand(void)
@@ -247,13 +251,13 @@ int saveenv(void)
 }
 
 #endif /* CMD_SAVEENV */
-
 /*
  * The legacy NAND code saved the environment in the first NAND device i.e.,
  * nand_dev_desc + 0. This is also the behaviour using the new NAND code.
  */
 void env_relocate_spec_nand(void)
 {
+#ifdef CONFIG_NAND
 #if !defined(ENV_IS_EMBEDDED)
 	size_t total;
 	int ret;
@@ -267,7 +271,9 @@ void env_relocate_spec_nand(void)
 		return use_default();
 
 #endif /* ! ENV_IS_EMBEDDED */
+#endif
 }
+
 
 void env_relocate_spec_movinand(void)
 {
@@ -288,7 +294,7 @@ void env_relocate_spec_onenand(void)
 
 void env_relocate_spec(void)
 {
-#if defined(CONFIG_SMDKC100)
+#if defined(CONFIG_SMDKC100) || defined(CONFIG_HKDKC100)
 	if (INF_REG3_REG == 1)
 		env_relocate_spec_onenand();
 	else if (INF_REG3_REG == 2)

@@ -400,12 +400,13 @@ void start_armboot (void)
 #endif
 
 /* samsung socs: auto-detect devices */
-#if defined(CONFIG_SMDK6410) || defined(CONFIG_SMDK6430) || defined(CONFIG_SMDKC100)
+#if defined(CONFIG_SMDK6410) || defined(CONFIG_SMDK6430) || defined(CONFIG_SMDKC100) || defined(CONFIG_HKDKC100)
+
 
 #if defined(CONFIG_MMC)
 	puts("SD/MMC:  ");
 
-#if !defined(CONFIG_SMDKC100)
+#if !(defined(CONFIG_SMDKC100) || defined(CONFIG_HKDKC100))
 	if (INF_REG3_REG == 0)
 		movi_ch = 0;
 	else
@@ -413,21 +414,24 @@ void start_armboot (void)
 #else
 	movi_ch = 0;
 #endif
-
+	printf("moci_ch %d \n", movi_ch);
 	movi_set_capacity();
 	movi_set_ofs(MOVI_TOTAL_BLKCNT);
 	movi_init();
 #endif
 
 	if (INF_REG3_REG == 1) {
+#if defined(CONFIG_ONENAND)
 		puts("OneNAND: ");
 		onenand_init();
 		/*setenv("bootcmd", "onenand read c0008000 80000 380000;bootm c0008000");*/
+#endif
 	} else {
+#if defined(CONFIG_NAND)	
 		puts("NAND:    ");
 		nand_init();
-
-#if !defined(CONFIG_SMDKC100)
+#endif
+#if !(defined(CONFIG_SMDKC100) || defined(CONFIG_HKDKC100))
 		if (INF_REG3_REG == 0 || INF_REG3_REG == 7)
 			setenv("bootcmd", "movi read kernel c0008000;movi read rootfs c0800000;bootm c0008000");
 		else

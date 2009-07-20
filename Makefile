@@ -2518,6 +2518,9 @@ smdk_mp_config	:	unconfig
 smdkc100_config :       unconfig
 	@$(MKCONFIG) $(@:_config=) arm s5pc1xx smdkc100 samsung s5pc100
 
+hkdkc100_config :       unconfig
+	@$(MKCONFIG) $(@:_config=) arm s5pc1xx hkdkc100 samsung s5pc100
+
 smdk6440_config :       unconfig
 	@$(MKCONFIG) $(@:_config=) arm s5p64xx smdk6440 samsung s5p6440
 
