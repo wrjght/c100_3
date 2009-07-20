@@ -42,12 +42,20 @@ single:
         ldr     r1, =0x00212400                         @ BL=4 , 2 chip , DDR2
         str     r1, [r0, #DMC_MEMCONTROL]
 
-        ldr     r1, =0x20F00313							@ 128MB config , 8banks , linear, Row=13bit,COL=10bit
+#if 1	// add charles 512MB enable
+        ldr     r1, =0x20E01323							@ 128MB config , 8banks , linear, Row=13bit,COL=10bit
         str     r1, [r0, #DMC_MEMCONFIG0]			
 
-        ldr     r1, =0x40F00313
+        ldr     r1, =0x40E00323
         str     r1, [r0, #DMC_MEMCONFIG1]
+#else	// 256MB enable
+        ldr     r1, =0x20F80313							@ 128MB config , 8banks , linear, Row=13bit,COL=10bit
+        str     r1, [r0, #DMC_MEMCONFIG0]			
 
+        ldr     r1, =0x40F80313
+        str     r1, [r0, #DMC_MEMCONFIG1]
+       
+#endif
         ldr     r1, =0x20000000
         str     r1, [r0, #DMC_PRECHCONFIG]
 
