@@ -77,12 +77,26 @@ static void smc9115_pre_init(void)
 		SROM_BC3_REG = ((SMC9115_Tacs<<28)|(SMC9115_Tcos<<24)|(SMC9115_Tacc<<16)|(SMC9115_Tcoh<<12)|(SMC9115_Tah<<8)|(SMC9115_Tacp<<4)|(SMC9115_PMC));
 }
 
+void boad_pwrhold(void)
+{
+	unsigned int tmp;
+	
+	tmp = readl(GPH0CON);
+	tmp |= (0x1<< 24);	
+	writel(tmp, GPH0CON);
+
+	tmp = readl(GPH0DAT);
+	tmp |= (0x1<<6);
+	writel(tmp, GPH0DAT);	
+}
+
 int board_init(void)
 {
 	DECLARE_GLOBAL_DATA_PTR;
 
-	smc9115_pre_init();
-
+	//smc9115_pre_init();
+	boad_pwrhold();
+	
 	gd->bd->bi_arch_number = MACH_TYPE;
 	gd->bd->bi_boot_params = (PHYS_SDRAM_1+0x100);
 

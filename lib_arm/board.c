@@ -414,7 +414,6 @@ void start_armboot (void)
 #else
 	movi_ch = 0;
 #endif
-	printf("moci_ch %d \n", movi_ch);
 	movi_set_capacity();
 	movi_set_ofs(MOVI_TOTAL_BLKCNT);
 	movi_init();
