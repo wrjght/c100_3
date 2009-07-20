@@ -1,5 +1,5 @@
-#ifndef _VAL_SMDKC100_H
-#define _VAL_SMDKC100_H
+#ifndef _VAL_HKDKC100_H
+#define _VAL_HKDKC100_H
 
 #include <config.h>
 #include <version.h>

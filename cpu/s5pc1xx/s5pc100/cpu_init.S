@@ -13,10 +13,6 @@ mem_ctrl_asm_init:
 	cmp	r2, #0x1
 	beq	onenand_pop
 
-#if 0	// charles
-;        b	exit_cpu_init  
-#endif
-
 single:
 
         ldr     r1, =0x6E101000                         @Phycontrol0 DLL parameter setting
@@ -109,9 +105,6 @@ single:
         ldr     r1, =0x00100002                         @PwrdnConfig
         str     r1, [r0, #DMC_PWRDNCONFIG]
 
-#if 0	// charles
-;        ldr     r1, =0xFF212100                         @MemControl
-#endif
         ldr     r1, =0xFF212400                         @MemControl
         str     r1, [r0, #DMC_MEMCONTROL]
 

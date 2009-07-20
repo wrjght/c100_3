@@ -448,6 +448,7 @@ int nand_write_opts(nand_info_t *meminfo, const nand_write_options_t *opts)
 	if (!opts->quiet)
 		printf("\n");
 
+//	printf("imglen = %d, (mtdoffset < meminfo->size : %d, %d) \n", imglen, mtdoffset, meminfo->size);
 	/* get data from input and write to the device */
 	while (imglen && (mtdoffset < meminfo->size)) {
 
@@ -645,6 +646,7 @@ int nand_read_opts(nand_info_t *meminfo, const nand_read_options_t *opts)
 	if (!opts->quiet)
 		printf("\n");
 
+//	printf("imglen = %d, (mtdoffset < meminfo->size : %d, %d) \n", imglen, mtdoffset, meminfo->size);
 	/* get data from input and write to the device */
 	while (imglen && (mtdoffset < meminfo->size)) {
 

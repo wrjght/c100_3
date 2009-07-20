@@ -844,6 +844,7 @@ void board_nand_init(struct nand_chip *nand)
 	for (i = 0; nand_flash_ids[i].name != NULL; i++) {
 		if (tmp == nand_flash_ids[i].id) {
 			type = &nand_flash_ids[i];
+
 			break;
 		}
 	}
@@ -851,10 +852,11 @@ void board_nand_init(struct nand_chip *nand)
 	nand->cellinfo = readb(nand->IO_ADDR_R);	/* 3rd byte */
 	tmp = readb(nand->IO_ADDR_R);			/* 4th byte */
 
+	
 	if (!type->pagesize) {
 		if (((nand->cellinfo >> 2) & 0x3) == 0) {
 			nand_type = S3C_NAND_TYPE_SLC;
-			nand->ecc.size = 512;
+			nand->ecc.size = 2048;
 			nand->ecc.bytes	= 4;
 
 			if ((1024 << (tmp & 0x3)) > 512) {
@@ -863,11 +865,14 @@ void board_nand_init(struct nand_chip *nand)
 				nand->ecc.read_oob = s3c_nand_read_oob_1bit;
 				nand->ecc.write_oob = s3c_nand_write_oob_1bit;
 				nand->ecc.layout = &s3c_nand_oob_64;
+
 			} else {
 				nand->ecc.layout = &s3c_nand_oob_16;
+				
 			}
 		} else {
 			nand_type = S3C_NAND_TYPE_MLC;
+
 			nand->options |= NAND_NO_SUBPAGE_WRITE;	/* NOP = 1 if MLC */
 			nand->ecc.read_page = s3c_nand_read_page_4bit;
 			nand->ecc.write_page = s3c_nand_write_page_4bit;
@@ -877,6 +882,7 @@ void board_nand_init(struct nand_chip *nand)
 		}
 	} else {
 		nand_type = S3C_NAND_TYPE_SLC;
+
 		nand->ecc.size = 512;
 		nand->cellinfo = 0;
 		nand->ecc.bytes = 4;

@@ -138,21 +138,23 @@ int env_init(void)
  * The legacy NAND code saved the environment in the first NAND device i.e.,
  * nand_dev_desc + 0. This is also the behaviour using the new NAND code.
  */
+ 
+// Modified saveenv_nand() to saveenv_nand_adv() (WC Jang)
 int saveenv_nand(void)
 {
 #ifdef CONFIG_NAND
 	size_t total;
 	int ret = 0;
 
-	puts("Erasing Nand...");
-	nand_erase(&nand_info[0], CFG_ENV_OFFSET, CFG_ENV_SIZE);
+	puts("#0 Erasing Nand...");
+//	nand_erase(&nand_info[0], CFG_ENV_OFFSET, CFG_ENV_SIZE);
 
 //#ifndef CONFIG_S5PC100_EVT1
 	if (nand_erase(&nand_info[0], CFG_ENV_OFFSET, CFG_ENV_SIZE))
 		return 1;
 //#endif
 
-	puts("Writing to Nand... ");
+	puts("#0 Writing to Nand... ");
 	total = CFG_ENV_SIZE;
 
 //#ifndef CONFIG_S5PC100_EVT1
@@ -166,6 +168,9 @@ int saveenv_nand(void)
 #endif	
 }
 
+
+
+// Modified saveenv_nand_adv() to saveenv_nand() (WC Jang)
 int saveenv_nand_adv(void)
 {
 #ifdef CONFIG_NAND
@@ -178,8 +183,8 @@ int saveenv_nand_adv(void)
 	tmp = (u_char *) malloc(total);
 	nand_read(&nand_info[0], 0x0, &total, (u_char *) tmp);
 
-	puts("Erasing Nand...");
-	nand_erase(&nand_info[0], 0x0, CFG_ENV_OFFSET + CFG_ENV_SIZE);
+	puts("#1 Erasing Nand...");
+//	nand_erase(&nand_info[0], 0x0, CFG_ENV_OFFSET + CFG_ENV_SIZE);
 
 //#ifndef CONFIG_S5PC100_EVT1
 	if (nand_erase(&nand_info[0], 0x0, CFG_ENV_OFFSET + CFG_ENV_SIZE)) {
@@ -188,7 +193,7 @@ int saveenv_nand_adv(void)
 	}
 //#endif
 
-	puts("Writing to Nand... ");
+	puts("#1 Writing to Nand... ");
 	ret = nand_write(&nand_info[0], 0x0, &total, (u_char *) tmp);
 	total = CFG_ENV_SIZE;
 
@@ -226,31 +231,61 @@ int saveenv_onenand(void)
 int saveenv(void)
 {
 #if !defined(CONFIG_SMDK6440)
+/*	//------------------- To solve the effect which dosen't save a modified enviroment value. 
 	if (INF_REG3_REG == 2 || INF_REG3_REG == 3)
+	{
+		printf("#0-0 saveenv\n");
 		saveenv_nand();
-	else if (INF_REG3_REG == 4 || INF_REG3_REG == 5 || INF_REG3_REG == 6)
+	}
+*/
+	if (INF_REG3_REG == 3)
+	{
+		printf("#0-0 saveenv\n");
+		saveenv_nand();
+	}
+	else if (INF_REG3_REG == 2 || INF_REG3_REG == 4 || INF_REG3_REG == 5 || INF_REG3_REG == 6)
+	{
+		printf("#0-1 saveenv\n");
 		saveenv_nand_adv();
+	}
 	else if (INF_REG3_REG == 0 || INF_REG3_REG == 7)
+	{
+		printf("#0-2 saveenv\n");	
 		saveenv_movinand();
+	}
 	else if (INF_REG3_REG == 1)
+	{
+		printf("#0-3 saveenv\n");
 		saveenv_onenand();
+	}
 	else
 		printf("Unknown boot device\n");
 #else
 	if (INF_REG3_REG == 3)
+	{
+		printf("#1-0 saveenv\n");
 		saveenv_nand();
+	}
 	else if (INF_REG3_REG == 4 || INF_REG3_REG == 5 || INF_REG3_REG == 6)
+	{
+		printf("#1-1 saveenv\n");	
 		saveenv_nand_adv();
+	}
 	else if (INF_REG3_REG == 0 || INF_REG3_REG == 1 || INF_REG3_REG == 7)
+	{
+		printf("#1-2 saveenv\n");		
 		saveenv_movinand();
+	}
 	else
 		printf("Unknown boot device\n");
+	
 #endif
 
 	return 0;
 }
 
 #endif /* CMD_SAVEENV */
+
 /*
  * The legacy NAND code saved the environment in the first NAND device i.e.,
  * nand_dev_desc + 0. This is also the behaviour using the new NAND code.
@@ -274,7 +309,6 @@ void env_relocate_spec_nand(void)
 #endif
 }
 
-
 void env_relocate_spec_movinand(void)
 {
 #if !defined(ENV_IS_EMBEDDED)
@@ -294,7 +328,7 @@ void env_relocate_spec_onenand(void)
 
 void env_relocate_spec(void)
 {
-#if defined(CONFIG_SMDKC100) || defined(CONFIG_HKDKC100)
+#if defined(CONFIG_SMDKC100) || defined(CONFIG_HKDKC100) || defined(CONFIG_JUDKC100)
 	if (INF_REG3_REG == 1)
 		env_relocate_spec_onenand();
 	else if (INF_REG3_REG == 2)

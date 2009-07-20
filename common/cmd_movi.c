@@ -7,6 +7,11 @@
 struct movi_offset_t ofsinfo;
 extern nand_info_t nand_info[];
 
+
+#define readl(addr) (*(volatile unsigned int*)(addr))
+#define writel(b,addr) ((*(volatile unsigned int *) (addr)) = (b))
+
+
 #if 0
 int do_testhsmmc(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 {
@@ -477,14 +482,337 @@ int do_insnand(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
 	nand_erase(&nand_info[0], 0x0, CFG_ENV_OFFSET + CFG_ENV_SIZE);
 	nand_write(&nand_info[0], 0x0, &total, (u_char *) addr);
 
-	printf("done\n");
+	printf("Done\n");
 
 	return 1;
 }
+
+
+
+int do_insAndroidUboot(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
+{
+	int ret = 0;
+
+	nand_write_options_t opts;
+
+	memset(&opts, 0, sizeof(opts));
+	opts.pad = 1;
+	opts.blockalign = 1;
+	opts.writeoob = 0;
+	opts.autoplace = 1;
+//------------------------------------------------------------------
+	printf("Start android uboot installation. \n");
+	
+
+	opts.offset = 0x0;
+	opts.length = readl(0x27FFFFA8);
+	opts.buffer = readl(0x27FFFFA0);
+
+
+	if(opts.length > 0x500000)	opts.quiet  = 0;
+	else				opts.quiet = 1;
+
+	
+	nand_erase(&nand_info[0], opts.buffer, &opts.length);
+	ret = nand_write_opts(&nand_info[0], &opts);
+	printf("Writed uBoot \n");
+
+
+	printf("Installed Android uboot image. \n");
+
+	return ret == 0 ? 0 : 1;
+
+	return 1;
+}
+
+
+
+
+int do_insAndroidzImage(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
+{
+	int ret = 0;
+
+	nand_write_options_t opts;
+
+	memset(&opts, 0, sizeof(opts));
+	opts.pad = 1;
+	opts.blockalign = 1;
+	opts.writeoob = 0;
+	opts.autoplace = 1;
+//------------------------------------------------------------------
+	printf("Start android zImage installation. \n");
+	opts.offset = 0x200000;
+	opts.length = readl(0x27FFFFB8);
+	opts.buffer = readl(0x27FFFFB0);
+
+
+	if(opts.length > 0x500000)	opts.quiet  = 0;
+	else				opts.quiet = 1;
+
+	nand_erase(&nand_info[0], opts.buffer, &opts.length);
+	ret = nand_write_opts(&nand_info[0], &opts);
+	printf("Writed zImage \n");
+
+
+	printf("Installed Android zImage image. \n");
+
+	return ret == 0 ? 0 : 1;
+
+	return 1;
+}
+
+
+
+
+int do_insAndroidRamdisk(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
+{
+	int ret = 0;
+
+	nand_write_options_t opts;
+
+	memset(&opts, 0, sizeof(opts));
+	opts.pad = 1;
+	opts.blockalign = 1;
+	opts.writeoob = 0;
+	opts.autoplace = 1;
+//------------------------------------------------------------------
+	printf("Start android Ramdisk installation. \n");
+
+	opts.offset = 0x600000;
+	opts.length = readl(0x27FFFFC8);
+	opts.buffer = readl(0x27FFFFC0);
+
+
+	if(opts.length > 0x500000)	opts.quiet  = 0;
+	else				opts.quiet = 1;
+
+	
+	nand_erase(&nand_info[0], opts.buffer, &opts.length);
+	ret = nand_write_opts(&nand_info[0], &opts);
+	printf("Writed Ramdisk \n");
+
+
+	printf("Installed Android Ramdisk image. \n");
+
+	return ret == 0 ? 0 : 1;
+
+	return 1;
+}
+
+
+
+
+int do_insAndroidSystemImg(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
+{
+	int ret = 0;
+
+	nand_write_options_t opts;
+
+	memset(&opts, 0, sizeof(opts));
+//------------------------------------------------------------------
+	opts.pad = 0;
+	opts.blockalign = 1;
+	opts.writeoob = 1;
+	opts.autoplace = 1;
+	
+	opts.offset = 0xA00000;
+	opts.length = readl(0x27FFFFD8);
+	opts.buffer = readl(0x27FFFFD0);
+
+	if(opts.length > 0x500000)	opts.quiet  = 0;
+	else				opts.quiet = 1;
+
+	printf("Start Addr : %X, Size :  %X \n",opts.buffer,opts.length);
+
+	nand_erase(&nand_info[0], opts.buffer, &opts.length);
+	ret = nand_write_opts(&nand_info[0], &opts);
+	printf("Writed System Image \n");
+
+
+	printf("Installed Android System Image image. \n");
+
+	return ret == 0 ? 0 : 1;
+
+	return 1;
+}
+
+
+
+
+int do_insAndroidUserImage(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
+{
+	int ret = 0;
+
+	nand_write_options_t opts;
+
+	memset(&opts, 0, sizeof(opts));
+//------------------------------------------------------------------
+	opts.pad = 0;
+	opts.blockalign = 1;
+	opts.writeoob = 1;
+	opts.autoplace = 1;
+	opts.offset = 0x9000000;
+	opts.length = readl(0x27FFFFE8);
+	opts.buffer = readl(0x27FFFFE0);
+
+	if(opts.length > 0x500000)	opts.quiet = 0;
+	else				opts.quiet = 1;
+
+	printf("Start Addr : %X, Size :  %X \n",opts.buffer,opts.length);
+
+	nand_erase(&nand_info[0], opts.buffer, &opts.length);
+	ret = nand_write_opts(&nand_info[0], &opts);
+	printf("Writed User Data \n");
+
+
+	printf("Installed Android UserData Image image. \n");
+
+	return ret == 0 ? 0 : 1;
+
+	return 1;
+}
+
+
+
+
+int do_insAndroid(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
+{
+	int ret = 0;
+
+	nand_write_options_t opts;
+
+	memset(&opts, 0, sizeof(opts));
+	opts.pad = 1;
+	opts.blockalign = 1;
+	opts.writeoob = 0;
+	opts.autoplace = 1;
+//------------------------------------------------------------------
+	printf("Start android installation. \n");
+	
+	opts.offset = 0x0;
+	opts.length = readl(0x27FFFFA8);
+	opts.buffer = readl(0x27FFFFA0);
+	if(opts.length > 0x500000)	opts.quiet  = 0;
+	else				opts.quiet = 1;
+	
+	nand_erase(&nand_info[0], opts.buffer, &opts.length);
+	ret = nand_write_opts(&nand_info[0], &opts);
+	printf("Writed uBoot \n");
+
+
+	opts.offset = 0x200000;
+	opts.length = readl(0x27FFFFB8);
+	opts.buffer = readl(0x27FFFFB0);
+
+	if(opts.length > 0x500000)	opts.quiet  = 0;
+	else				opts.quiet = 1;
+	nand_erase(&nand_info[0], opts.buffer, &opts.length);
+	ret = nand_write_opts(&nand_info[0], &opts);
+	printf("Writed zImaget \n");
+
+
+	opts.offset = 0x600000;
+	opts.length = readl(0x27FFFFC8);
+	opts.buffer = readl(0x27FFFFC0);
+	if(opts.length > 0x500000)	opts.quiet  = 0;
+	else				opts.quiet = 1;
+
+
+	nand_erase(&nand_info[0], opts.buffer, &opts.length);
+	ret = nand_write_opts(&nand_info[0], &opts);
+	printf("Writed Ramdisk Image \n");
+
+//------------------------------------------------------------------
+	udelay (1000);
+	
+	opts.pad = 0;
+	opts.blockalign = 1;
+	opts.writeoob = 1;
+	opts.autoplace = 1;
+	
+	opts.offset = 0xA00000;
+	opts.length = readl(0x27FFFFD8);
+	opts.buffer = readl(0x27FFFFD0);
+	if(opts.length > 0x500000)	opts.quiet  = 0;
+	else				opts.quiet = 1;
+
+
+	printf("Start Addr : %X, Size :  %X \n",opts.buffer,opts.length);
+
+	nand_erase(&nand_info[0], opts.buffer, &opts.length);
+	ret = nand_write_opts(&nand_info[0], &opts);
+	printf("Writed System Image \n");
+
+	udelay (1000);
+
+	opts.offset = 0x9000000;
+	opts.length = readl(0x27FFFFE8);
+	opts.buffer = readl(0x27FFFFE0);
+	if(opts.length > 0x500000)	opts.quiet  = 0;
+	else				opts.quiet = 1;
+
+	printf("Start Addr : %X, Size :  %X \n",opts.buffer,opts.length);
+
+	nand_erase(&nand_info[0], opts.buffer, &opts.length);
+	ret = nand_write_opts(&nand_info[0], &opts);
+	printf("Writed User Data \n");
+
+	printf("Android Installation OK. \n");
+
+
+	return ret == 0 ? 0 : 1;
+
+	return 1;
+}
+
+
 
 U_BOOT_CMD(
 	insnand, 1, 0, do_insnand,
 	"insnand - install SD/MMC bootloader image to NAND flash\n",
 	": install SD/MMC bootloader to NAND flash\n"
 );
+
+
+
+U_BOOT_CMD(
+	insAndUboot, 1, 0, do_insAndroidUboot,
+	"insAndUboot - install Android Uboot image from DRAM to NAND flash\n",
+	": install Android Uboot Image from DRAM to NAND flash\n"
+);
+
+
+U_BOOT_CMD(
+	insAndZimage, 1, 0, do_insAndroidzImage,
+	"insAndZimage - install Android ZImage image from DRAM to NAND flash\n",
+	": install Android ZImage Image from DRAM to NAND flash\n"
+);
+
+
+U_BOOT_CMD(
+	insAndRamdisk, 1, 0, do_insAndroidRamdisk,
+	"insAndRamdisk - install Android Ramdisk image from DRAM to NAND flash\n",
+	": install Android Ramdisk Image from DRAM to NAND flash\n"
+);
+
+
+U_BOOT_CMD(
+	insAndSystemImg, 1, 0, do_insAndroidSystemImg,
+	"insAndSystemImg - install Android System image from DRAM to NAND flash\n",
+	": install Android System Image from DRAM to NAND flash\n"
+);
+
+
+U_BOOT_CMD(
+	insAndUserdata, 1, 0, do_insAndroidUserImage,
+	"insAndUserdata - install Android Userdata image from DRAM to NAND flash\n",
+	": install Android Userdata Image from DRAM to NAND flash\n"
+);
+
+U_BOOT_CMD(
+	insAndroid, 1, 0, do_insAndroid,
+	"insAndroid - install Android all image from DRAM to NAND flash\n",
+	": install Android all Images from DRAM to NAND flash\n"
+);
 #endif
+

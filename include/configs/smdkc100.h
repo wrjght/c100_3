@@ -37,8 +37,10 @@
 #define CONFIG_S5PC1XX		1		/* in a SAMSUNG S3C64XX Family  */
 #define CONFIG_SMDKC100		1
 
+
 //#define CONFIG_S5PC100_EVT1
 #define CONFIG_S5PC100_EVT2
+
 
 #define BOOT_ONENAND		0x1
 #define BOOT_NAND		0x2
@@ -106,6 +108,7 @@
  * Hardware drivers
  */
 #define CONFIG_DRIVER_SMC911X	1	/* we have a SMC9115 on-board */
+#define CONFIG_NET_RETRY_COUNT  30
 
 #ifdef 	CONFIG_DRIVER_SMC911X
 #define CONFIG_DRIVER_SMC911X_16_BIT
@@ -179,7 +182,7 @@
 #define CONFIG_BOOTP_HOSTNAME
 #define CONFIG_BOOTP_BOOTPATH
 
-#define CONFIG_BOOTDELAY	3
+#define CONFIG_BOOTDELAY	5
 /*#define CONFIG_BOOTARGS    	"root=ramfs devfs=mount console=ttySA0,9600" */
 #define CONFIG_ETHADDR		00:40:5c:26:0a:5b
 #define CONFIG_NETMASK          255.255.255.0
@@ -222,6 +225,7 @@
 
 #define CFG_MEMTEST_START	MEMORY_BASE_ADDRESS	/* memtest works on	*/
 #define CFG_MEMTEST_END		MEMORY_BASE_ADDRESS + 0x7e00000		/* 128 MB in DRAM	*/
+//#define CFG_MEMTEST_END		MEMORY_BASE_ADDRESS + 0xFE00000		/* 256 MB in DRAM	*/
 
 #undef CFG_CLKS_IN_HZ		/* everything, incl board info, in Hz */
 
@@ -339,7 +343,9 @@
 
 #define CONFIG_NR_DRAM_BANKS	1	   /* we have 2 bank of DRAM */
 #define PHYS_SDRAM_1		MEMORY_BASE_ADDRESS /* SDRAM Bank #1 */
-#define PHYS_SDRAM_1_SIZE	0x08000000 /* 64 MB */
+
+//#define PHYS_SDRAM_1_SIZE	0x08000000 /* 128 MB */
+#define PHYS_SDRAM_1_SIZE	0x10000000 /* 256 MB */
 
 #define CFG_FLASH_BASE		0x00000000
 
@@ -362,7 +368,7 @@
  * SMDKC100 board specific data
  */
 
-#define CONFIG_IDENT_STRING	" for SMDKC100"
+#define CONFIG_IDENT_STRING	" for SMDKC100 (ver1.2.1)"
 
 /* total memory required by uboot */
 #define CFG_UBOOT_SIZE		(2*1024*1024)
@@ -402,8 +408,12 @@
 #undef	CONFIG_NO_SDMMC_DETECTION
 
 #define CONFIG_MTDPARTITION	"40000 3c0000 3000000"
-#define CONFIG_BOOTDELAY	3
-#define CONFIG_BOOTCOMMAND	"onenand read c0008000 40000 3c0000;bootm c0008000"
+#define CONFIG_BOOTDELAY	5
+
+//#define CONFIG_BOOTCOMMAND	"onenand read c0008000 40000 3c0000;bootm c0008000"
+#define CONFIG_BOOTCOMMAND	"nand read.bbp 20008000 200000 300000;nand read.bbp 20800000 600000 100000;bootm 20008000 20800000"
+
+
 /* OneNAND configuration */
 #define CFG_ONENAND_BASE 	(0xe7100000)
 #define CFG_MAX_ONENAND_DEVICE	1

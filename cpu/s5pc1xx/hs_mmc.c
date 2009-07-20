@@ -1,6 +1,6 @@
 #include <common.h>
 
-#if defined(CONFIG_SMDKC100) || defined(CONFIG_HKDKC100)
+#if defined(CONFIG_SMDKC100) || defined(CONFIG_HKDKC100) || defined(CONFIG_JUDKC100)
 #define CONFIG_SUPPORT_MMC_PLUS
 #define HCLK_OPERATION
 #define DEBUG_HSMMC
@@ -1285,7 +1285,7 @@ int hsmmc_init (void)
 	width = 4;
 	HCLK = 44000000;
 	dbg("HCLK = %08lu\n", HCLK);
-	
+
 	if (!(readl(regs+HM_PRNSTS) & (1<<16))) {
 		printf("Card not found\n");
 		dbg("No MMC/SD card inserted in slot\n");

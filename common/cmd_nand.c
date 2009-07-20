@@ -369,7 +369,9 @@ int do_nand(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
 				ret = nand_write_opts(nand, &opts);
 			}
 #ifdef CFG_NAND_YAFFS_WRITE
-		} else if (!read && s != NULL && + (!strcmp(s, ".yaffs") || !strcmp(s, ".yaffs1"))) {
+		}
+		else if (!read && s != NULL && + (!strcmp(s, ".yaffs") || !strcmp(s, ".yaffs1")))
+		{
 			nand_write_options_t opts;
  			memset(&opts, 0, sizeof(opts));
  			opts.buffer = (u_char*) addr;
@@ -377,22 +379,57 @@ int do_nand(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
  			opts.offset = off;
  			opts.pad = 0;
  			opts.blockalign = 1;
- 			opts.quiet = quiet;
+			if(opts.length > 0x500000)	opts.quiet  = 0;
+			else				opts.quiet = 1;
  			opts.writeoob = 1;
  			opts.autoplace = 1;
 
 			/* jsgood */
  			/* if (s[6] == '1')
 				opts.forceyaffs = 1; */
-
+			
  			ret = nand_write_opts(nand, &opts);
+		}
 #endif
- 		} else {
-			if (read)
+		else if (s != NULL && (!strcmp(s, ".bbp")))
+		{
+			if (read){
+				nand_read_options_t opts;
+				memset(&opts, 0, sizeof(opts));
+				opts.buffer	= (u_char*) addr;
+				opts.length	= size;
+				opts.offset	= off;
+
+				if(opts.length > 0x500000)	opts.quiet  = 0;
+				else				opts.quiet = 1;
+
+//				printf("nand_read - bad block processing... \n");
+				ret = nand_read_opts(nand, &opts);
+
+			}
+			else {
+				nand_write_options_t opts;
+				memset(&opts, 0, sizeof(opts));
+				opts.buffer	= (u_char*) addr;
+				opts.length	= size;
+				opts.offset	= off;
+				opts.pad	= 1;
+				opts.blockalign = 1;
+				opts.noecc = 1;
+
+				if(opts.length > 0x500000)	opts.quiet  = 0;
+				else				opts.quiet = 1;
+//				printf("nand_write - bad block processing... \n");
+				ret = nand_write_opts(nand, &opts);
+			}
+		}
+		else
+		{
+			if (read){
 				ret = nand_read(nand, off, &size, (u_char *)addr);
+			}
 			else {
 				ret = nand_write(nand, off, &size, (u_char *)addr);
-
 				if (ret == 0) {
 					uint *magic = (uint*)(PHYS_SDRAM_1);
 					if ((0x24564236 == magic[0]) && (0x20764316 == magic[1]))
