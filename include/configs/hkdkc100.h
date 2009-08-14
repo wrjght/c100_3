@@ -33,8 +33,8 @@
  * High Level Configuration Options
  * (easy to change)
  */
-#define CONFIG_S5PC100		1		/* in a SAMSUNG S3C6410 SoC */
-#define CONFIG_S5PC1XX		1		/* in a SAMSUNG S3C64XX Family  */
+#define CONFIG_S5PC100		1		/* in a SAMSUNG S5PC100 SoC */
+#define CONFIG_S5PC1XX		1		/* in a SAMSUNG S5PC1XX Family  */
 #define CONFIG_HKDKC100	1
 
 //#define CONFIG_S5PC100_EVT1
@@ -106,7 +106,7 @@
 /*
  * Hardware drivers
  */
- 
+
 #define CONFIG_DRIVER_SMC911X	1	/* we have a SMC9115 on-board */
 
 #ifdef 	CONFIG_DRIVER_SMC911X
@@ -138,12 +138,13 @@
 #endif
 
 #define CONFIG_CMDLINE_EDITING
-
-#undef CONFIG_S5PC100_I2C		/* this board has H/W I2C */
-#ifdef CONFIG_S5PC100_I2C
+#define CONFIG_S5PC1XX_I2C
+//#undef CONFIG_S5PC100_I2C		/* this board has H/W I2C */
+#ifdef CONFIG_S5PC1XX_I2C
 #define CONFIG_HARD_I2C		1
 #define CFG_I2C_SPEED		50000
-#define CFG_I2C_SLAVE		0xFE
+#define CFG_I2C_SLAVE		(0xCC>>1) /* I2C address is CC/DD of MAX8698C when SRAD=0 */
+#define MAX8698C_I2C_ADDR	(0xCC>>1) 	/* I2C address of MAX8698C when SRAD=0 */
 #endif
 
 #define CONFIG_DOS_PARTITION
@@ -153,7 +154,8 @@
 #undef CONFIG_USB_STORAGE
 #define CONFIG_S3C_USBD
 
-#define USBD_DOWN_ADDR		0xc0000000
+//#define USBD_DOWN_ADDR		0xc0000000
+#define USBD_DOWN_ADDR		0xc0008000
 
 /************************************************************
  * RTC
@@ -169,7 +171,7 @@
 #define CONFIG_CMD_CACHE
 #define CONFIG_CMD_USB
 #define CONFIG_CMD_REGINFO
-//#define ONFIG_CMD_NAND
+//#define CONFIG_CMD_NAND
 //#define CONFIG_CMD_ONENAND
 #define CONFIG_CMD_MOVINAND
 #define CONFIG_CMD_PING
@@ -179,7 +181,7 @@
 
 #define CONFIG_CMD_ELF
 //#define CONFIG_CMD_DHCP
-//#define CONFIG_CMD_I2C
+#define CONFIG_CMD_I2C
 
 /*
  * BOOTP options
@@ -190,7 +192,8 @@
 #define CONFIG_BOOTP_BOOTPATH
 
 #define CONFIG_BOOTDELAY	3
-/*#define CONFIG_BOOTARGS    	"root=ramfs devfs=mount console=ttySA0,9600" */
+//#define CONFIG_BOOTARGS    	"root=ramfs devfs=mount console=ttySAC0,115200"
+#define CONFIG_BOOTARGS     "root=/dev/mmcblk0p2 rw rootfstype=ext3 mem=256m init=/init  console=ttySAC0,115200 "
 #define CONFIG_ETHADDR		00:40:5c:26:0a:5b
 #define CONFIG_NETMASK          255.255.255.0
 #define CONFIG_IPADDR		192.168.0.20
@@ -241,16 +244,11 @@
 #endif
 
 #define CONFIG_CLK_666_166_66
-//#define CONFIG_CLK_533_133_66
 //#define CONFIG_CLK_833_166_66
-
+//#define CONFIG_HCLKD0_222 /* DDR bus clock = 222MHz */
 #if defined(CONFIG_CLK_666_166_66)
 #define APLL_MDIV       444
 #define APLL_PDIV       4
-#define APLL_SDIV       0
-#elif defined(CONFIG_CLK_533_133_66)
-#define APLL_MDIV       417
-#define APLL_PDIV       3
 #define APLL_SDIV       0
 #elif defined(CONFIG_CLK_833_166_66)
 #define APLL_MDIV       417
@@ -283,11 +281,25 @@
 #define HPLL_VAL	set_pll(HPLL_MDIV,HPLL_PDIV,HPLL_SDIV)
 
 #if defined(CONFIG_CLK_666_166_66)
-#define CLK_DIV0_VAL    ((1<<APLL_RATIO)|(0<<ARM_RATIO)|(3<<D0_BUS_RATIO)|(1<<PCLKD0_RATIO)|(1<<SECSS_RATIO))
+#if defined(CONFIG_HCLKD0_222)
+ /* DIVD0_BUS clock divider ratio, HCLKD0 = DOUTARM / RATIO (RATIO = D0_BUS_RATIO + 1= 3) */
+#define DIVD0_BUS_RATO_VAL 2
+#else
+ /* DIVD0_BUS clock divider ratio, HCLKD0 = DOUTARM / RATIO (RATIO = D0_BUS_RATIO + 1 = 4) */
+#define DIVD0_BUS_RATO_VAL 3
+#endif
+#define CLK_DIV0_VAL    ((1<<APLL_RATIO)|(0<<ARM_RATIO)|(DIVD0_BUS_RATO_VAL<<D0_BUS_RATIO)|(1<<PCLKD0_RATIO)|(1<<SECSS_RATIO))
 #elif defined(CONFIG_CLK_533_133_66)
 #define CLK_DIV0_VAL    ((1<<APLL_RATIO)|(0<<ARM_RATIO)|(3<<D0_BUS_RATIO)|(1<<PCLKD0_RATIO)|(1<<SECSS_RATIO))
 #elif defined(CONFIG_CLK_833_166_66)
-#define CLK_DIV0_VAL    ((1<<APLL_RATIO)|(0<<ARM_RATIO)|(4<<D0_BUS_RATIO)|(1<<PCLKD0_RATIO)|(1<<SECSS_RATIO))
+#if defined(CONFIG_HCLKD0_222)
+ /* DIVD0_BUS clock divider ratio, HCLKD0 = DOUTARM / RATIO (RATIO = D0_BUS_RATIO + 1= 4) */
+#define DIVD0_BUS_RATO_VAL 3
+#else
+ /* DIVD0_BUS clock divider ratio, HCLKD0 = DOUTARM / RATIO (RATIO = D0_BUS_RATIO + 1 = 5) */
+#define DIVD0_BUS_RATO_VAL 4
+#endif
+#define CLK_DIV0_VAL    ((1<<APLL_RATIO)|(0<<ARM_RATIO)|(DIVD0_BUS_RATO_VAL<<D0_BUS_RATIO)|(1<<PCLKD0_RATIO)|(1<<SECSS_RATIO))
 #endif
 
 #define CLK_DIV1_VAL	((1<<16)|(1<<12)|(1<<8)|(1<<4))
@@ -410,8 +422,8 @@
 
 //#define CONFIG_MTDPARTITION	"40000 3c0000 3000000"
 #define CONFIG_BOOTDELAY	3
-#define CONFIG_BOOTCOMMAND	"onenand read c0008000 40000 3c0000;bootm c0008000"
-/* OneNAND configuration */
+#define CONFIG_BOOTCOMMAND	"movi read kernel c0008000;movi read rootfs c0800000;bootm c0008000"
+
 //#define CFG_ONENAND_BASE 	(0xe7100000)
 //#define CFG_MAX_ONENAND_DEVICE	1
 
@@ -422,11 +434,6 @@
 //#define CONFIG_ONENAND
 //#define ONENAND_REG_DBS_DFS_WIDTH (0x160)
 //#define ONENAND_REG_FLASH_AUX_CNTRL       (0x300)
-
-#define GPNCON_OFFSET		0x830
-#define GPNDAT_OFFSET		0x834
-#define GPNPUD_OFFSET		0x838
-
 #define CFG_ENV_IS_IN_AUTO
 
 #endif	/* __CONFIG_H */

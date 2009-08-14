@@ -4,6 +4,9 @@
 #include <movi.h>
 #include <asm/io.h>
 #include <regs.h>
+#include <i2c.h>
+#include <max8698c.h>
+
 
 uint movi_hc = 0;
 
@@ -60,6 +63,75 @@ void movi_read_env(ulong addr)
 typedef u32 (*MMC_ReadBlocks)(u32, u32, u32);
 void movi_bl2_copy(void)
 {
-	MMC_ReadBlocks readmmc = (MMC_ReadBlocks)0x1F8;	
+	MMC_ReadBlocks readmmc = (MMC_ReadBlocks)0x1F8;
 	readmmc(BL2_BASE, MOVI_BL2_POS, MOVI_BL2_BLKCNT);
 }
+
+#define I2CSTAT_BSY 0x20        /* Busy bit */
+#define I2C_MODE_MT	0xC0		/* Master Transmit Mode */
+#define I2C_MODE_MR	0x80		/* Master Receive Mode */
+#define I2C_START_STOP	0x20		/* START / STOP */
+#define I2C_TXRX_ENA	0x10		/* I2C Tx/Rx enable */
+#define I2C_TIMEOUT 1			/* 1 second */
+
+static inline void i2c_delay(unsigned long loops)
+{
+	__asm__ volatile ("1:\n" "subs %0, %1, #1\n" "bne 1b":"=r" (loops):"0"(loops));
+}
+
+static void i2c_init_f (int speed, int slaveadd)
+{
+	S5PC1XX_I2C *const i2c = S5PC1XX_GetBase_I2C ();
+	ulong freq, pres = 1, div = 2;
+	int i, status;
+
+	/*Configure GPD[4:3]  to I2C0_SDA , I2C0_SCL */
+	GPDCON_REG |= 0x22000;
+
+	/* wait for some time to give previous transfer a chance to finish */
+	i = I2C_TIMEOUT * 1000;
+	status = i2c->IICSTAT;
+	while ((i > 0) && (status & I2CSTAT_BSY)) {
+		i2c_delay (1000);
+		status = i2c->IICSTAT;
+		i--;
+	}
+
+	/* set prescaler, divisor according to freq, also set
+	 * ACKGEN, IRQ */
+	i2c->IICCON = (pres<<6) | (1<<5) | (div&0xf);
+
+	/* init to SLAVE REVEIVE and set slaveaddr */
+	i2c->IICSTAT = 0;
+	i2c->IICADD = slaveadd;
+	/* program Master Transmit (and implicit STOP) */
+	i2c->IICSTAT = I2C_MODE_MT | I2C_TXRX_ENA;
+
+}
+
+
+/* 10ms when 1000000 */
+/* 68us when 10000 */
+/* 7.8us when 1000 */
+void set_max8698c(void)
+{
+
+	/* Configure output for PMIC_SET1~3, P3V3_EN, P5V_EN  */
+	GPH1CON_REG =  0x11111111;
+	GPH1DAT_REG = 0x7C;
+
+	i2c_init_f(CFG_I2C_SPEED, MAX8698C_I2C_ADDR);
+
+	i2c_reg_write(MAX8698C_I2C_ADDR, REG_DVSARM2_1, 0x65); /* */
+	i2c_reg_write(MAX8698C_I2C_ADDR, REG_DVSARM4_3, 0xc9); /* */
+
+	i2c_reg_write(MAX8698C_I2C_ADDR, REG_DVSINT2_1, 0x97); /* */
+
+	i2c_reg_write(MAX8698C_I2C_ADDR, REG_LDO4, 0x0D); /* LDO4 = 2.9V */
+	i2c_reg_write(MAX8698C_I2C_ADDR, REG_LDO5, 0x02); /* LDO4 = 1.8V */
+//	i2c_reg_write(MAX8698C_I2C_ADDR, REG_LDO5, 0x11); /* LDO4 = 3.3V */
+
+	i2c_reg_write(MAX8698C_I2C_ADDR, REG_ONOFF1, 0xFE); /* Turn LDO4,LDO5 on */
+	i2c_reg_write(MAX8698C_I2C_ADDR, REG_ONOFF2, 0xF0); 	/* Turn LDO7 on */
+}
+

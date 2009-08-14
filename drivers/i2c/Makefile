@@ -30,8 +30,6 @@ COBJS-y += omap1510_i2c.o
 COBJS-y += omap24xx_i2c.o
 COBJS-y += tsi108_i2c.o
 COBJS-y += mxc_i2c.o
-COBJS-y += s5pc1xx_gpio_i2c.o
-COBJS-y += max8698.o
 
 COBJS	:= $(COBJS-y)
 SRCS	:= $(COBJS:.o=.c)

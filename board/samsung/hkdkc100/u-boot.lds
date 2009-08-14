@@ -34,10 +34,11 @@ SECTIONS
 	{
 	  cpu/s5pc1xx/start.o	(.text)
 	  cpu/s5pc1xx/s5pc100/cpu_init.o	(.text)
+	  cpu/s5pc1xx/i2c.o	(.text)
 	  board/samsung/hkdkc100/lowlevel_init.o	(.text)
-          cpu/s5pc1xx/onenand_cp.o      (.text)                 
-          cpu/s5pc1xx/nand_cp.o (.text)                     
-          cpu/s5pc1xx/movi.o (.text) 
+      cpu/s5pc1xx/onenand_cp.o      (.text)                 
+      cpu/s5pc1xx/nand_cp.o (.text)                     
+      cpu/s5pc1xx/movi.o (.text) 
 	  *(.text)
 	}
 

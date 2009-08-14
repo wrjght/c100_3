@@ -39,7 +39,10 @@ _TEXT_BASE:
 
 	.globl lowlevel_init
 lowlevel_init:
-	mov	r12, lr
+
+	ldr	sp, =0x37ff0	/* setup temp stack pointer */
+	sub	sp, sp, #12 
+	push {lr}
 
 	/* IO Retention release */
 	ldr	r0, =(ELFIN_CLOCK_POWER_BASE + OTHERS_OFFSET)
@@ -58,30 +61,24 @@ lowlevel_init:
 	mov	r1, #0x9
 	str	r1, [r0]
 
-#if defined(CONFIG_CLK_833_166_66)
-	ldr	sp, =0x37ff0	/* setup temp stack pointer */
-	sub	sp, sp, #12
-	bl	set_ltc_for_833
-#endif
+	bl	set_max8698c
 
 	/* init system clock */
 	bl system_clock_init
-
 	/* for UART */
 	bl uart_asm_init
 
 	bl dma_init
-	
+#if defined(CONFIG_NAND)
 	/* NAND GPIO PIN MUX */
 	bl nand_pin_mux	
-	
+#endif 	
 	
 
 #if defined(CONFIG_NAND)
 	/* simple init for NAND */
 	bl nand_asm_init
 #endif
-
 	/* when we already run in ram, we don't need to relocate U-Boot.
 	 * and actually, memory controller must be configured before U-Boot
 	 * is running in ram.
@@ -92,7 +89,11 @@ lowlevel_init:
 	bic	r2, r2, r0		/* r0 <- current base addr of code */
 	cmp     r1, r2                  /* compare r0, r1                  */
 	beq     1f			/* r0 == r1 then skip sdram init   */
-
+#if 1
+	/* Port Group MP1_X Driver Strength set  0x00 (4mA) in case of VDD_DDR = 1.8V */
+	bl	mp1_x_drive_strength_init
+#endif	
+	
 	bl 	mem_ctrl_asm_init
 
 1:
@@ -105,9 +106,7 @@ lowlevel_init:
 	ldr	r0, =ELFIN_UART_BASE
 	ldr	r1, =0x4b4b4b4b
 	str	r1, [r0, #UTXH_OFFSET]
-
-	mov	lr, r12
-	mov	pc, lr
+	pop {pc}
 
 wakeup_reset:
 
@@ -215,11 +214,30 @@ uart_asm_init:
 
 	mov	pc, lr
 
-
+/*
+ * Init MP1_X Driver Strength for SDRAM
+ * void mp1_x_drive_strength_init(void)
+ */
+ mp1_x_drive_strength_init:
+ 
+	ldr	r0, =ELFIN_GPIO_BASE
+	ldr	r1, =0xaaaa
+	str   	r1, [r0, #MP1_0DRV_OFFSET]
+	str   	r1, [r0, #MP1_1DRV_OFFSET]
+	str   	r1, [r0, #MP1_2DRV_OFFSET]
+	str   	r1, [r0, #MP1_3DRV_OFFSET]
+	str   	r1, [r0, #MP1_4DRV_OFFSET]
+	str   	r1, [r0, #MP1_5DRV_OFFSET]
+	str   	r1, [r0, #MP1_6DRV_OFFSET]	
+	str   	r1, [r0, #MP1_7DRV_OFFSET]
+	str   	r1, [r0, #MP1_8DRV_OFFSET]	
+	
+	mov pc, lr	
 
 /*
  *   Init GPK0CON/GPK2CON for NFCON
  */
+#if defined(CONFIG_NAND) 
 nand_pin_mux:
 
         ldr     r0, =0xe03002a0  	// GPK0CON
@@ -230,12 +248,13 @@ nand_pin_mux:
         str     r1, [r0]
 
 	mov	pc, lr
-
+#endif
 
 
 /*
  * Nand Interface Init for SMDKC100
  */
+#if defined(CONFIG_NAND) 
 nand_asm_init:
 
 	ldr	r0, =ELFIN_NAND_BASE
@@ -249,7 +268,7 @@ nand_asm_init:
 	str     r1, [r0, #NFCONT_OFFSET]
 
 	mov	pc, lr
-
+#endif
 /*
  * Setting for DMA
  */

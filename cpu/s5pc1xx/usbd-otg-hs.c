@@ -320,7 +320,9 @@ u8 test_pkt [TEST_PKT_SIZE] = {
 void s3c_usb_init_phy(void)
 {
 	writel(0x0, S5P_OTG_PHYPWR);
-	writel(0x22, S5P_OTG_PHYCLK);
+	//writel(0x22, S5P_OTG_PHYCLK);
+	/* Select externel crystal for XO block, Reference clock frequency select for PLL */
+	writel(0x02, S5P_OTG_PHYCLK);
 	writel(0x1, S5P_OTG_RSTCON);
 	udelay(10);
 	writel(0x0, S5P_OTG_RSTCON);

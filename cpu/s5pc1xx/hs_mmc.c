@@ -22,8 +22,8 @@
 
 static ulong mmc_bread (int dev_num, ulong blknr, ulong blkcnt, ulong* dst);
 
-#if defined(CONFIG_S5P6440)
-extern ulong virt_to_phy_smdk6440(ulong addr);
+#if defined(CONFIG_S5PC100)
+extern ulong virt_to_phy_smdkc100(ulong addr);
 #endif
 
 #define SDI_Tx_buffer_HSMMC		(0x21000000)

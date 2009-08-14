@@ -28,9 +28,9 @@
 
 #include <common.h>
 
-#ifdef CONFIG_S3C64XX_I2C
+#ifdef CONFIG_S5PC1XX_I2C
 
-#include <mdirac3.h>
+#include <s5pc100.h>
 
 #include <i2c.h>
 
@@ -55,16 +55,21 @@
 
 #define I2C_TIMEOUT 1			/* 1 second */
 
+static inline int udelay_f(unsigned long usec)
+{
+	unsigned long loops = usec *300;
+	 __asm__ volatile ("1:\n" "subs %0, %1, #1\n" "bne 1b":"=r" (loops):"0"(loops));
+}
 
 static int WaitForXfer (void)
 {
-	S3C64XX_I2C *const i2c = S3C64XX_GetBase_I2C ();
+	S5PC1XX_I2C *const i2c = S5PC1XX_GetBase_I2C ();
 	int i, status;
 
 	i = I2C_TIMEOUT * 10000;
 	status = i2c->IICCON;
 	while ((i > 0) && !(status & I2CCON_IRPND)) {
-		udelay (100);
+		udelay_f (100);
 		status = i2c->IICCON;
 		i--;
 	}
@@ -74,37 +79,36 @@ static int WaitForXfer (void)
 
 static int IsACK (void)
 {
-	S3C64XX_I2C *const i2c = S3C64XX_GetBase_I2C ();
+	S5PC1XX_I2C *const i2c = S5PC1XX_GetBase_I2C ();
 
 	return (!(i2c->IICSTAT & I2CSTAT_NACK));
 }
 
 static void ReadWriteByte (void)
 {
-	S3C64XX_I2C *const i2c = S3C64XX_GetBase_I2C ();
+	S5PC1XX_I2C *const i2c = S5PC1XX_GetBase_I2C ();
 
 	i2c->IICCON &= ~I2CCON_IRPND;
 }
 
 void i2c_init (int speed, int slaveadd)
 {
-	S3C64XX_I2C *const i2c = S3C64XX_GetBase_I2C ();
+	S5PC1XX_I2C *const i2c = S5PC1XX_GetBase_I2C ();
 	ulong freq, pres = 16, div;
 	int i, status;
 
-	/* wait for some time to give previous transfer a chance to finish */
+	/* wait for some time to give previous transfer a chance to finish */	
 
 	i = I2C_TIMEOUT * 1000;
 	status = i2c->IICSTAT;
 	while ((i > 0) && (status & I2CSTAT_BSY)) {
-		udelay (1000);
+		udelay_f (1000);
 		status = i2c->IICSTAT;
 		i--;
 	}
 
 	/* calculate prescaler and divisor values */
 	freq = get_PCLK ();
-	
 #if 0	
 	if ((freq / pres / (16 + 1)) > speed)
 		/* set prescaler to 512 */
@@ -149,12 +153,12 @@ int i2c_transfer (unsigned char cmd_type,
 		  unsigned char addr_len,
 		  unsigned char data[], unsigned short data_len)
 {
-	S3C64XX_I2C *const i2c = S3C64XX_GetBase_I2C ();
+	S5PC1XX_I2C *const i2c = S5PC1XX_GetBase_I2C ();
 	int i, status, result;
 
 	if (data == 0 || data_len == 0) {
 		/*Don't support data transfer of no length or to address 0 */
-		printf ("i2c_transfer: bad call\n");
+		//printf ("i2c_transfer: bad call\n");
 		return I2C_NOK;
 	}
 
@@ -162,7 +166,7 @@ int i2c_transfer (unsigned char cmd_type,
 	i = I2C_TIMEOUT * 1000;
 	status = i2c->IICSTAT;
 	while ((i > 0) && (status & I2CSTAT_BSY)) {
-		udelay (1000);
+		udelay_f (1000);
 		status = i2c->IICSTAT;
 		i--;
 	}
@@ -283,7 +287,7 @@ int i2c_transfer (unsigned char cmd_type,
 		break;
 
 	default:
-		printf ("i2c_transfer: bad call\n");
+		//printf ("i2c_transfer: bad call\n");
 		result = I2C_NOK;
 		break;
 	}
@@ -297,6 +301,7 @@ int i2c_probe (uchar chip)
 
 	buf[0] = 0;
 
+//	//printf("i2c_probe(%d)\n", chip);
 	/*
 	 * What is needed is to send the chip address and verify that the
 	 * address was <ACK>ed (i.e. there was a chip at that address which
@@ -311,7 +316,7 @@ int i2c_read (uchar chip, uint addr, int alen, uchar * buffer, int len)
 	int ret;
 
 	if (alen > 4) {
-		printf ("I2C read: addr len %d not supported\n", alen);
+		//printf ("I2C read: addr len %d not supported\n", alen);
 		return 1;
 	}
 
@@ -340,7 +345,7 @@ int i2c_read (uchar chip, uint addr, int alen, uchar * buffer, int len)
 	if ((ret =
 	     i2c_transfer (I2C_READ, chip << 1, &xaddr[4 - alen], alen,
 			   buffer, len)) != 0) {
-		printf ("I2c read: failed %d\n", ret);
+		//printf ("I2c read: failed %d\n", ret);
 		return 1;
 	}
 	return 0;
@@ -351,7 +356,7 @@ int i2c_write (uchar chip, uint addr, int alen, uchar * buffer, int len)
 	uchar xaddr[4];
 
 	if (alen > 4) {
-		printf ("I2C write: addr len %d not supported\n", alen);
+		//printf ("I2C write: addr len %d not supported\n", alen);
 		return 1;
 	}
 
@@ -380,6 +385,23 @@ int i2c_write (uchar chip, uint addr, int alen, uchar * buffer, int len)
 		(I2C_WRITE, chip << 1, &xaddr[4 - alen], alen, buffer,
 		 len) != 0);
 }
+
+uchar i2c_reg_read (uchar chip, uchar reg)
+{
+	uchar buf;
+
+	i2c_read (chip, reg, 1, &buf, 1);
+
+	return buf;
+}
+
+void i2c_reg_write (uchar chip, uchar reg, uchar val)
+{
+	i2c_write (chip, reg, 1, &val, 1);
+
+	return;
+}
+
 #endif	/* CONFIG_HARD_I2C */
 
-#endif /* CONFIG_DRIVER_S3C64XX_I2C */
+#endif /* CONFIG_S5PC1XX_I2C */

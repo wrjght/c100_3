@@ -61,6 +61,7 @@ static const char pszMe[] = "usbd: ";
 
 int do_usbd_dnw ( cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 {
+	int i;
 
 	if (argv[0][0] == 'u') {
 		DNW = 0;
@@ -107,6 +108,14 @@ int do_usbd_dnw ( cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 
 	/* when operation is done, usbd must be stopped */
 	s3c_usb_stop();
+
+	for(i=0;i<100000;i++)
+	{
+		  if (S3C_USBD_DETECT_IRQ()) {
+			   s3c_udc_int_hndlr();
+			   S3C_USBD_CLEAR_IRQ();
+		  }  
+	 }
 
 	return 0;
 }

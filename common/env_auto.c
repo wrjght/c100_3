@@ -186,12 +186,12 @@ int saveenv_nand_adv(void)
 	puts("#1 Erasing Nand...");
 //	nand_erase(&nand_info[0], 0x0, CFG_ENV_OFFSET + CFG_ENV_SIZE);
 
-//#ifndef CONFIG_S5PC100_EVT1
+#ifndef CONFIG_S5PC100_EVT1
 	if (nand_erase(&nand_info[0], 0x0, CFG_ENV_OFFSET + CFG_ENV_SIZE)) {
 		free(tmp);
 		return 1;
 	}
-//#endif
+#endif
 
 	puts("#1 Writing to Nand... ");
 	ret = nand_write(&nand_info[0], 0x0, &total, (u_char *) tmp);
@@ -199,12 +199,12 @@ int saveenv_nand_adv(void)
 
 	ret = nand_write(&nand_info[0], CFG_ENV_OFFSET, &total, (u_char *) env_ptr);
 
-//#ifndef CONFIG_S5PC100_EVT1
+#ifndef CONFIG_S5PC100_EVT1
 	if (ret || total != CFG_ENV_SIZE) {
 		free(tmp);
 		return 1;
 	}
-//#endif
+#endif
 	puts("done\n");
 	free(tmp);
 
@@ -214,7 +214,9 @@ int saveenv_nand_adv(void)
 
 int saveenv_movinand(void)
 {
-#ifndef CONFIG_S5PC100
+#if! defined(CONFIG_MOVINAND)
+	movi_write_env(virt_to_phys((ulong)env_ptr));
+#else if defined(CONFIG_S5PC100)
 	movi_write_env(virt_to_phys((ulong)env_ptr));
 #endif
 	puts("done\n");
@@ -238,6 +240,8 @@ int saveenv(void)
 		saveenv_nand();
 	}
 */
+#if! defined(CONFIG_MOVINAND)
+	printf("INF_REG3_REG : 0x%x\n", INF_REG3_REG);
 	if (INF_REG3_REG == 3)
 	{
 		printf("#0-0 saveenv\n");
@@ -249,6 +253,7 @@ int saveenv(void)
 		saveenv_nand_adv();
 	}
 	else if (INF_REG3_REG == 0 || INF_REG3_REG == 7)
+
 	{
 		printf("#0-2 saveenv\n");	
 		saveenv_movinand();
@@ -260,6 +265,10 @@ int saveenv(void)
 	}
 	else
 		printf("Unknown boot device\n");
+#else
+		saveenv_movinand();
+#endif		
+
 #else
 	if (INF_REG3_REG == 3)
 	{
@@ -329,12 +338,16 @@ void env_relocate_spec_onenand(void)
 void env_relocate_spec(void)
 {
 #if defined(CONFIG_SMDKC100) || defined(CONFIG_HKDKC100) || defined(CONFIG_JUDKC100)
+#if! defined(CONFIG_MOVINAND)
 	if (INF_REG3_REG == 1)
 		env_relocate_spec_onenand();
 	else if (INF_REG3_REG == 2)
 		env_relocate_spec_nand();
 	else if (INF_REG3_REG == 3)
 		env_relocate_spec_movinand();
+#else
+		env_relocate_spec_movinand();
+#endif
 #elif !defined(CONFIG_SMDK6440)
 	if (INF_REG3_REG >= 2 && INF_REG3_REG <= 6)
 		env_relocate_spec_nand();

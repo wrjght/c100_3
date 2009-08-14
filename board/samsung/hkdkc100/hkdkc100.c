@@ -28,6 +28,10 @@
 #include <common.h>
 #include <regs.h>
 #include <asm/io.h>
+#include <i2c.h>
+#include <max8698c.h>
+
+static void init_max8698c(void);
 
 /* ------------------------------------------------------------------------- */
 #define SMC9115_Tacs	(0x0)	// 0clk		address set-up
@@ -80,14 +84,31 @@ static void smc9115_pre_init(void)
 void boad_pwrhold(void)
 {
 	unsigned int tmp;
-	
+
 	tmp = readl(GPH0CON);
-	tmp |= (0x1<< 24);	
+	tmp |= (0x1<< 24);
 	writel(tmp, GPH0CON);
 
 	tmp = readl(GPH0DAT);
 	tmp |= (0x1<<6);
-	writel(tmp, GPH0DAT);	
+	writel(tmp, GPH0DAT);
+}
+
+int gpio_init (void)
+{
+
+	/* Configure output for LED_nTS1_ON, LED_nTS2, LED_nPWR_ON, LCD_BL_EN, XVideo_EN */
+	GPA1CON_REG = 0x11111;
+	GPA1DAT_REG = 0x1B;
+
+	/* TS_SCL, TS_SDA, CAP_INT are configure to input  */
+	GPH1CON_REG &=  ~0xFF000000;
+	GPH0CON_REG &=  ~0x000F0000;
+
+	GPG0CON_REG = 0x1111;
+	GPG0DAT_REG = 0x3;
+
+	return 0;
 }
 
 int board_init(void)
@@ -96,7 +117,9 @@ int board_init(void)
 
 	//smc9115_pre_init();
 	boad_pwrhold();
-	
+	gpio_init();
+
+	writel(0x22000, GPDCON);
 	gd->bd->bi_arch_number = MACH_TYPE;
 	gd->bd->bi_boot_params = (PHYS_SDRAM_1+0x100);
 

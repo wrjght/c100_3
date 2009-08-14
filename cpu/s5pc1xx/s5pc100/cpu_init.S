@@ -19,6 +19,8 @@ single:
         str     r1, [r0, #DMC_PHYCONTROL0]
 
         ldr     r1, =0x000000F4                         @Phycontrol1 DLL parameter setting
+//        ldr     r1, =0x000000F6                         @Phycontrol1 DLL parameter setting
+
         str     r1, [r0, #DMC_PHYCONTROL1]
 
         ldr     r1, =0x00000000                         @Phycontrol2 DLL parameter setting
@@ -43,31 +45,45 @@ single:
         str     r1, [r0, #DMC_MEMCONTROL]
 
 #if 1	// add charles 512MB enable
-        ldr     r1, =0x20E01323							@ 128MB config , 8banks , linear, Row=13bit,COL=10bit
-        str     r1, [r0, #DMC_MEMCONFIG0]			
+        ldr     r1, =0x20E01323							@ 512MB config , 8banks , linear, Row=14bit,COL=10bit
+        str     r1, [r0, #DMC_MEMCONFIG0]
 
         ldr     r1, =0x40E00323
         str     r1, [r0, #DMC_MEMCONFIG1]
 #else	// 256MB enable
         ldr     r1, =0x20F80313							@ 128MB config , 8banks , linear, Row=13bit,COL=10bit
-        str     r1, [r0, #DMC_MEMCONFIG0]			
+        str     r1, [r0, #DMC_MEMCONFIG0]
 
         ldr     r1, =0x40F80313
         str     r1, [r0, #DMC_MEMCONFIG1]
-       
+
 #endif
         ldr     r1, =0x20000000
         str     r1, [r0, #DMC_PRECHCONFIG]
 
-		ldr     r1, =0x0000050E							@7.8us*200MHz=0x618, 7.8us*166MHz=1294(0x50E)
-        str     r1, [r0, #DMC_TIMINGAREF]
 
-        ldr     r1, =0x16233288                         @TimingRow      @166MHz
-        str     r1, [r0, #DMC_TIMINGROW]
+#ifdef	CONFIG_HCLKD0_222
+	ldr 	r1, =0x000006c3 						@7.8us*222MHz=0x6c3, 7.8us*166MHz=1294(0x50E)
+       str     r1, [r0, #DMC_TIMINGAREF]
+	/* T-rfc   127.5nS/5ns  64 */
+       ldr     r1, =0x202332C8                         		@TimingRow      @222MHz
+       str     r1, [r0, #DMC_TIMINGROW]
 
-        ldr     r1, =0x24250304							@CL=5
-        str     r1, [r0, #DMC_TIMINGDATA]
-  
+       ldr     r1, =0x24450304							@CL=5
+       str     r1, [r0, #DMC_TIMINGDATA]
+
+ #else
+
+	ldr	 r1, =0x0000050E						 @7.8us*200MHz=0x618, 7.8us*166MHz=1294(0x50E)
+	str	 r1, [r0, #DMC_TIMINGAREF]
+
+	ldr	 r1, =0x16233288						 @TimingRow 	 @166MHz
+	str	 r1, [r0, #DMC_TIMINGROW]
+
+	ldr	 r1, =0x24250304						 @CL=5
+	str	 r1, [r0, #DMC_TIMINGDATA]
+ #endif
+
         ldr     r1, =0x07c80232                         @Timing Power
         str     r1, [r0, #DMC_TIMINGPOWER]
 
@@ -83,7 +99,7 @@ single:
         ldr     r1, =0x00030000                         @chip0 EMRS3
         str     r1, [r0, #DMC_DIRECTCMD]
 
-        ldr     r1, =0x00010400                         @chip0 EMRS1 (MEM DLL on = DQS# disable)
+		ldr     r1, =0x00010400                         @chip0 EMRS1 (MEM DLL on = DQS# disable)
         str     r1, [r0, #DMC_DIRECTCMD]
 
         ldr     r1, =0x00000552                         @chip0 MRS (MEM DLL reset) CL=5
@@ -91,7 +107,7 @@ single:
 
         ldr     r1, =0x01000000                         @chip0 PALL
         str     r1, [r0, #DMC_DIRECTCMD]
-        
+
         ldr     r1, =0x05000000                         @chip0 REFA
         str     r1, [r0, #DMC_DIRECTCMD]
 
@@ -105,7 +121,8 @@ single:
         str     r1, [r0, #DMC_DIRECTCMD]
 
         ldr     r1, =0x00010400                         @chip0 EMRS1 (OCD exit)
-        str     r1, [r0, #DMC_DIRECTCMD]        
+//        ldr     r1, =0x00010440                         @chip0 EMRS1 (OCD exit)
+        str     r1, [r0, #DMC_DIRECTCMD]
 
         ldr     r1, =0x00FF20B0                         @ConControl PHY driving , auto refresh on , out of order scheduling
         str     r1, [r0, #DMC_CONCONTROL]
