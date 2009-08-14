@@ -118,14 +118,30 @@ void set_max8698c(void)
 
 	/* Configure output for PMIC_SET1~3, P3V3_EN, P5V_EN  */
 	GPH1CON_REG =  0x11111111;
-	GPH1DAT_REG = 0x7C;
 
+#if defined(CONFIG_CLK_666_166_66)
+	GPH1DAT_REG = 0x7E;
+#else
+	GPH1DAT_REG = 0x7C;
+#endif
 	i2c_init_f(CFG_I2C_SPEED, MAX8698C_I2C_ADDR);
 
+#if defined(CONFIG_CLK_666_166_66)
+	/* DVS ARM Voltage tables setting 1.05 1.10 1.15 1.2  */
+	i2c_reg_write(MAX8698C_I2C_ADDR, REG_DVSARM2_1, 0x76); /* */
+	i2c_reg_write(MAX8698C_I2C_ADDR, REG_DVSARM4_3, 0x98); /* */
+
+	/* DVS INT Voltage  1.15 1.2*/
+	i2c_reg_write(MAX8698C_I2C_ADDR, REG_DVSINT2_1, 0x98); /* */
+#else
+	/* DVS Voltage tables setting 1.00 1.05 1.2 1.35  for VCCARM */
 	i2c_reg_write(MAX8698C_I2C_ADDR, REG_DVSARM2_1, 0x65); /* */
 	i2c_reg_write(MAX8698C_I2C_ADDR, REG_DVSARM4_3, 0xc9); /* */
 
+	/* DVS INT Voltage  1.0 1.2*/
 	i2c_reg_write(MAX8698C_I2C_ADDR, REG_DVSINT2_1, 0x97); /* */
+
+#endif
 
 	i2c_reg_write(MAX8698C_I2C_ADDR, REG_LDO4, 0x0D); /* LDO4 = 2.9V */
 	i2c_reg_write(MAX8698C_I2C_ADDR, REG_LDO5, 0x02); /* LDO4 = 1.8V */
