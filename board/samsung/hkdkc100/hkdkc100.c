@@ -111,6 +111,8 @@ int gpio_init (void)
 	return 0;
 }
 
+extern void lcdc_init_f (void);
+
 int board_init(void)
 {
 	DECLARE_GLOBAL_DATA_PTR;
@@ -122,6 +124,9 @@ int board_init(void)
 	writel(0x22000, GPDCON);
 	gd->bd->bi_arch_number = MACH_TYPE;
 	gd->bd->bi_boot_params = (PHYS_SDRAM_1+0x100);
+
+//	printf("\nBootsplash on LCD\n\n");
+	lcdc_init_f();
 
 #if 0
 	icache_enable();
