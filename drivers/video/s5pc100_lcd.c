@@ -5,7 +5,7 @@
 #include <asm/io.h>
 #include <regs.h>
 #include "c100_lcdcon.h"
-#include "logo1.c"
+//#include "logo1.c"
 
 //#include <i2c.h>
 //#include <max8698c.h>
@@ -112,7 +112,7 @@ static void s3cfb_set_fimd_info(void)
 	
 	VIDCON0			=	 S3C_VIDCON0_INTERLACE_F_PROGRESSIVE | S3C_VIDCON0_VIDOUT_RGB_IF | S3C_VIDCON0_L1_DATA16_SUB_16_MODE | \
 			S3C_VIDCON0_L0_DATA16_MAIN_16_MODE | S3C_VIDCON0_PNRMODE_RGB_P | \
-			S3C_VIDCON0_CLKVALUP_ALWAYS | S3C_VIDCON0_CLKDIR_DIVIDED | S3C_VIDCON0_CLKSEL_F_HCLK | \
+			S3C_VIDCON0_CLKVALUP_ALWAYS | S3C_VIDCON0_CLKDIR_DIVIDED | S3C_VIDCON0_CLKSEL_F_HCLK| \
 			S3C_VIDCON0_ENVID_ENABLE| S3C_VIDCON0_ENVID_F_ENABLE| S3C_VIDCON0_CLKVAL_F(133000/9896 + 1);
 
 	VIDCON1 		= 	S3C_VIDCON1_IHSYNC_INVERT | S3C_VIDCON1_IVSYNC_INVERT | S3C_VIDCON1_IVDEN_NORMAL;
@@ -129,7 +129,7 @@ static void s3cfb_set_fimd_info(void)
 
 	WINCON0 =  S3C_WINCONx_ENLOCAL_DMA | S3C_WINCONx_BUFSEL_0 | S3C_WINCONx_BUFAUTOEN_DISABLE| \
 			S3C_WINCONx_BITSWP_DISABLE | S3C_WINCONx_BYTSWP_DISABLE | S3C_WINCONx_HAWSWP_ENABLE | \
-			S3C_WINCONx_BURSTLEN_16WORD | S3C_WINCONx_BPPMODE_F_16BPP_565 | S3C_WINCONx_ENWIN_F_ENABLE;
+			S3C_WINCONx_BURSTLEN_8WORD| S3C_WINCONx_BPPMODE_F_16BPP_565| S3C_WINCONx_ENWIN_F_ENABLE;
 
 //		s3cfb_fimd.wincon0 = S3C_WINCONx_HAWSWP_ENABLE | S3C_WINCONx_BURSTLEN_16WORD | S3C_WINCONx_BPPMODE_F_16BPP_565;	
 /*
@@ -158,6 +158,8 @@ void lcdc_init_f (void)
 	unsigned int temp;
 	unsigned char *bmap;	
 	unsigned short *fb16;
+
+//	return;
 //	S5PC1XX_LCD *const s5pc_lcdc = S5PC1XX_GetBase_LCD();
 
 //	puts ("*** LCDC init  step1 *** \n\n");
@@ -205,7 +207,7 @@ void lcdc_init_f (void)
 			}
 */		
 //		puts ("*** LCDC init  step2 *** \n\n");
-
+/*
 		for (i=0; i<(S3C_FB_VRES*S3C_FB_HRES)/0x1000; i++) 
 			{
 				for(j=0;j<0x1001;j++)
@@ -213,6 +215,23 @@ void lcdc_init_f (void)
 	
 				fb16 += (0x1001+0x96);
 			}
+*/
+		for(j=0;j<160*320+200;j++) 
+			fb16[k++] = 0xf800;
+		for(j=0;j<160*320+200;j++)
+			fb16[k++] = 0x07e0;
+		for(j=0;j<(160*320+10000);j++)
+			fb16[k++] = 0x001f;
+
+/*
+		for (i=0; i<(S3C_FB_VRES*S3C_FB_HRES)/2; i++) 
+			{
+//				for(j=0;j<0x1001;j++)
+					fb32[i] = logo1[k++];
+	
+//				fb32 += (0x1001+0x96);
+			}
+*/		
 //		puts ("*** LCDC init  step3 *** \n\n");
 
 	s3cfb_init_ldi();
@@ -277,7 +296,7 @@ void s3cfb_spi_lcd_den(int value)
 
 void s3cfb_spi_write(int address, int data)
 {
-	unsigned int delay = 5;
+	unsigned int delay = 50;
 	unsigned char dev_id = 0x1d;
 	int i;
 
@@ -397,7 +416,7 @@ static void s3cfb_init_ldi(void)
 	s3cfb_spi_lcd_dseri(1);
 	// power on sequence
 	s3cfb_spi_write(0x07, 0x0000);
-	mdelay(8);
+	mdelay(16);
 	
 	s3cfb_spi_write(0x11, 0x222f);
 	s3cfb_spi_write(0x12, 0x0f00);
@@ -406,10 +425,10 @@ static void s3cfb_init_ldi(void)
 	s3cfb_spi_write(0x74, 0x0001);
 	s3cfb_spi_write(0x76, 0x0000);
 	s3cfb_spi_write(0x10, 0x560c);
-	mdelay(FRAME_CYCLE_TIME*3);
+	mdelay(FRAME_CYCLE_TIME*7);
 	
 	s3cfb_spi_write(0x12, 0x0c63);
-	mdelay(FRAME_CYCLE_TIME*2);
+	mdelay(FRAME_CYCLE_TIME*6);
 	
 	s3cfb_spi_write(0x01, 0x0B3B);
 	s3cfb_spi_write(0x02, 0x0300);
@@ -440,13 +459,13 @@ static void s3cfb_init_ldi(void)
 	
 //	printk("power on sequence done...\n");	
 
-	mdelay(1);
+	mdelay(4);
 
 	// display on sequence
 	s3cfb_spi_write(0x07, 0x0001);
-	mdelay(FRAME_CYCLE_TIME*1);
+	mdelay(FRAME_CYCLE_TIME*3);
 	s3cfb_spi_write(0x07, 0x0101);
-	mdelay(FRAME_CYCLE_TIME*1);
+	mdelay(FRAME_CYCLE_TIME*3);
 	s3cfb_spi_write(0x07, 0x0103);
 //	printk("display on sequence done...\n");
 
