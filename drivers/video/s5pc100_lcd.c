@@ -10,7 +10,13 @@
 //#include <i2c.h>
 //#include <max8698c.h>
 
-#define mdelay(x)	udelay(1000*x)
+static inline int udelay_f(unsigned long usec)
+{
+	unsigned long loops = usec *300;
+	 __asm__ volatile ("1:\n" "subs %0, %1, #1\n" "bne 1b":"=r" (loops):"0"(loops));
+}
+
+#define mdelay(x)	udelay_f(1000*x)
 static void s3cfb_init_ldi(void);
 
 #define S3C_FB_HFP			4	/* front porch */
@@ -83,7 +89,7 @@ static void s3cfb_init_ldi(void);
 #define VIDW03ADD2		__REG(0xEE00010C)
 #define VIDW04ADD2		__REG(0xEE000110)
 
-#define FB_START_ADD	0x2F000000
+#define FB_START_ADD	0x2E000000
 
 static void s3cfb_set_fimd_info(void)
 {
@@ -154,7 +160,7 @@ void lcdc_init_f (void)
 	unsigned short *fb16;
 //	S5PC1XX_LCD *const s5pc_lcdc = S5PC1XX_GetBase_LCD();
 
-	puts ("*** LCDC init *** \n\n");
+//	puts ("*** LCDC init  step1 *** \n\n");
 
 
 	/* LCD_HSYNC, LCD_VSYNC, LCD_VDEN, LCD_VCLK, VD[23:0] */
@@ -162,12 +168,14 @@ void lcdc_init_f (void)
 	GPF1CON_REG = 0x22222222;
 	GPF2CON_REG = 0x22222222;
 	GPF3CON_REG = 0x00002222;	
+//	puts ("*** LCDC init  step1.1 *** \n\n");
 
 	/* backlight ON [GPD0] */
 	temp = GPDCON_REG;	// Set output
 	GPDCON_REG= (temp & 0xFFFFFFF0) | 0x1;
 	temp = GPDDAT_REG;	// Set High
 	GPDDAT_REG = (temp & 0xFFFFFFFE) | 0x1;
+//	puts ("*** LCDC init  step1.2 *** \n\n");
 
 	/* module reset [GPB4] */
 	temp = GPBCON_REG;	// Set output (GPB 4,5,6,7)
@@ -176,12 +184,13 @@ void lcdc_init_f (void)
 	GPBDAT_REG= (temp & 0xFFFFFF0F) | 0xF0;
 	temp = GPBPUD_REG;
 	GPBPUD_REG = (temp & 0xFFFF00FF);
-	mdelay(5);
+	mdelay(2);
 	temp = GPBDAT_REG;	// Set Low
 	GPBDAT_REG= (temp & 0xFFFFFFEF);
-	mdelay(5);
+	mdelay(2);
 	temp = GPBDAT_REG;	// Set High
 	GPBDAT_REG= (temp & 0xFFFFFFEF) | 0x10;
+//	puts ("*** LCDC init  step1.3 *** \n\n");
 
 		fb16 = (ushort *)(FB_START_ADD);
 		k=0;
@@ -195,6 +204,8 @@ void lcdc_init_f (void)
 				fb16 += S3C_FB_HRES;
 			}
 */		
+//		puts ("*** LCDC init  step2 *** \n\n");
+
 		for (i=0; i<(S3C_FB_VRES*S3C_FB_HRES)/0x1000; i++) 
 			{
 				for(j=0;j<0x1001;j++)
@@ -202,9 +213,14 @@ void lcdc_init_f (void)
 	
 				fb16 += (0x1001+0x96);
 			}
+//		puts ("*** LCDC init  step3 *** \n\n");
 
 	s3cfb_init_ldi();
+//	puts ("*** LCDC init  step4 *** \n\n");
+	
 	s3cfb_set_fimd_info();
+//	puts ("*** LCDC init  step5 *** \n\n");
+	
 }	
 
 #define S5P_FB_SPI_CLK(x)       (S5PC1XX_GPB(1 + (x * 4)))
@@ -261,17 +277,17 @@ void s3cfb_spi_lcd_den(int value)
 
 void s3cfb_spi_write(int address, int data)
 {
-	unsigned int delay = 50;
+	unsigned int delay = 5;
 	unsigned char dev_id = 0x1d;
 	int i;
 
 	s3cfb_spi_lcd_den(1);
 	s3cfb_spi_lcd_dclk(1);
 	s3cfb_spi_lcd_dseri(1);
-	udelay(delay);
+	udelay_f(delay);
 
 	s3cfb_spi_lcd_den(0);
-	udelay(delay);
+	udelay_f(delay);
 
 	for (i = 5; i >= 0; i--) {
 		s3cfb_spi_lcd_dclk(0);
@@ -281,25 +297,25 @@ void s3cfb_spi_write(int address, int data)
 		else
 			s3cfb_spi_lcd_dseri(0);
 
-		udelay(delay);
+		udelay_f(delay);
 
 		s3cfb_spi_lcd_dclk(1);
-		udelay(delay);
+		udelay_f(delay);
 	}
 
 	s3cfb_spi_lcd_dclk(0);
 	s3cfb_spi_lcd_dseri(0);
-	udelay(delay);
+	udelay_f(delay);
 
 	s3cfb_spi_lcd_dclk(1);
-	udelay(delay);
+	udelay_f(delay);
 
 	s3cfb_spi_lcd_dclk(0);
 	s3cfb_spi_lcd_dseri(0);
-	udelay(delay);
+	udelay_f(delay);
 
 	s3cfb_spi_lcd_dclk(1);
-	udelay(delay);
+	udelay_f(delay);
 
 	for (i = 15; i >= 0; i--) {
 		s3cfb_spi_lcd_dclk(0);
@@ -309,20 +325,20 @@ void s3cfb_spi_write(int address, int data)
 		else
 			s3cfb_spi_lcd_dseri(0);
 
-		udelay(delay);
+		udelay_f(delay);
 
 		s3cfb_spi_lcd_dclk(1);
-		udelay(delay);
+		udelay_f(delay);
 	}
 
 	s3cfb_spi_lcd_dseri(1);
-	udelay(delay);
+	udelay_f(delay);
 
 	s3cfb_spi_lcd_den(1);
-	udelay(delay * 10);
+	udelay_f(delay * 10);
 
 	s3cfb_spi_lcd_den(0);
-	udelay(delay);
+	udelay_f(delay);
 
 	for (i = 5; i >= 0; i--) {
 		s3cfb_spi_lcd_dclk(0);
@@ -332,26 +348,26 @@ void s3cfb_spi_write(int address, int data)
 		else
 			s3cfb_spi_lcd_dseri(0);
 
-		udelay(delay);
+		udelay_f(delay);
 
 		s3cfb_spi_lcd_dclk(1);
-		udelay(delay);
+		udelay_f(delay);
 
 	}
 
 	s3cfb_spi_lcd_dclk(0);
 	s3cfb_spi_lcd_dseri(1);
-	udelay(delay);
+	udelay_f(delay);
 
 	s3cfb_spi_lcd_dclk(1);
-	udelay(delay);
+	udelay_f(delay);
 
 	s3cfb_spi_lcd_dclk(0);
 	s3cfb_spi_lcd_dseri(0);
-	udelay(delay);
+	udelay_f(delay);
 
 	s3cfb_spi_lcd_dclk(1);
-	udelay(delay);
+	udelay_f(delay);
 
 	for (i = 15; i >= 0; i--) {
 		s3cfb_spi_lcd_dclk(0);
@@ -361,15 +377,15 @@ void s3cfb_spi_write(int address, int data)
 		else
 			s3cfb_spi_lcd_dseri(0);
 
-		udelay(delay);
+		udelay_f(delay);
 
 		s3cfb_spi_lcd_dclk(1);
-		udelay(delay);
+		udelay_f(delay);
 
 	}
 
 	s3cfb_spi_lcd_den(1);
-	udelay(delay);
+	udelay_f(delay);
 }
 
 #define FRAME_CYCLE_TIME	25
@@ -381,7 +397,7 @@ static void s3cfb_init_ldi(void)
 	s3cfb_spi_lcd_dseri(1);
 	// power on sequence
 	s3cfb_spi_write(0x07, 0x0000);
-	mdelay(2);
+	mdelay(8);
 	
 	s3cfb_spi_write(0x11, 0x222f);
 	s3cfb_spi_write(0x12, 0x0f00);
