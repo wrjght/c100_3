@@ -296,7 +296,7 @@ void s3cfb_spi_lcd_den(int value)
 
 void s3cfb_spi_write(int address, int data)
 {
-	unsigned int delay = 50;
+	unsigned int delay = 25;
 	unsigned char dev_id = 0x1d;
 	int i;
 

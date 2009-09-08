@@ -199,6 +199,7 @@ int checkboard(void)
 }
 #endif
 
+#if 0
 #ifdef CONFIG_ENABLE_MMU
 ulong virt_to_phy_smdkc100(ulong addr)
 {
@@ -206,9 +207,9 @@ ulong virt_to_phy_smdkc100(ulong addr)
 		return (addr - 0xc0000000 + 0x20000000);
 	else
 		printf("do not support this address : %08lx\n", addr);
-
 	return addr;
 }
+#endif
 #endif
 
 #if defined(CONFIG_CMD_NAND) && defined(CFG_NAND_LEGACY)

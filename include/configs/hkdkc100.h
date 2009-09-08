@@ -55,7 +55,8 @@
 /* input clock of PLL */
 #define CONFIG_SYS_CLK_FREQ	12000000	/* the SMDK6400 has 12MHz input clock */
 
-#define CONFIG_ENABLE_MMU
+//#define CONFIG_ENABLE_MMU
+#undef CONFIG_ENABLE_MMU
 
 #ifdef CONFIG_ENABLE_MMU
 #define virt_to_phys(x)	virt_to_phy_smdkc100(x)
@@ -193,7 +194,7 @@
 
 #define CONFIG_BOOTDELAY	3
 //#define CONFIG_BOOTARGS    	"root=ramfs devfs=mount console=ttySAC0,115200"
-#define CONFIG_BOOTARGS     "root=/dev/mmcblk0p2 rw rootfstype=ext3 mem=256m init=/init  console=ttySAC0,115200 "
+#define CONFIG_BOOTARGS     "root=/dev/mmcblk0p2 rw rootfstype=ext3 mem=384m init=/init  console=ttySAC0,115200 "
 #define CONFIG_ETHADDR		00:40:5c:26:0a:5b
 #define CONFIG_NETMASK          255.255.255.0
 #define CONFIG_IPADDR		192.168.0.20
@@ -422,7 +423,8 @@
 
 //#define CONFIG_MTDPARTITION	"40000 3c0000 3000000"
 #define CONFIG_BOOTDELAY	3
-#define CONFIG_BOOTCOMMAND	"movi read kernel c0008000;movi read rootfs c0800000;bootm c0008000"
+//#define CONFIG_BOOTCOMMAND	"movi read kernel c0008000;movi read rootfs c0800000;bootm c0008000"
+#define CONFIG_BOOTCOMMAND	"movi read kernel 20008000;bootm 20008000"
 
 //#define CFG_ONENAND_BASE 	(0xe7100000)
 //#define CFG_MAX_ONENAND_DEVICE	1

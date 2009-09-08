@@ -219,7 +219,7 @@ int saveenv_movinand(void)
 #else if defined(CONFIG_S5PC100)
 	movi_write_env(virt_to_phys((ulong)env_ptr));
 #endif
-	puts("done\n");
+	puts("done\n"); 
 
 	return 1;
 }
