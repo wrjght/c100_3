@@ -32,10 +32,32 @@ single:
         ldr     r1, =0x6E101003                         @dll start
         str     r1, [r0, #DMC_PHYCONTROL0]
 
-        ldr     r1, =0x54101003                         @Force Value locking
+#if 1
+wait_for_dll_locking:
+		ldr		r2, [r0, #DMC_PHYSTATUS0]
+		bic		r2, #0xfffffffb		
+		mov		r2, r2, lsr #2
+		cmp		r2, #0x1
+		bne		wait_for_dll_locking
+
+		ldr		r2, [r0, #DMC_PHYSTATUS0]
+		bic		r2, #0xffffc03f		
+		mov		r2, r2, lsr #6
+#endif
+		mov		r2,r2,lsl #24
+		ldr		r1, =0x00101003
+		orr		r1,r1,r2
+
+		ldr		r4, =0xF4010000
+		str		r1, [r4, #4]
+
+		
+//        ldr     r1, =0x54101003                         @Force Value locking
         str     r1, [r0, #DMC_PHYCONTROL0]
 
-        ldr     r1, =0x54101001                         @Dll off
+		ldr		r1, =0x00101001
+		orr		r1,r1,r2
+//        ldr     r1, =0x54101001                         @Dll off
         str     r1, [r0, #DMC_PHYCONTROL0]
 
         ldr     r1, =0x00FF2010                         @auto refresh off
