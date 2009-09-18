@@ -134,7 +134,7 @@ void set_max8698c(void)
 	/* DVS INT Voltage  1.15 1.2*/
 	i2c_reg_write(MAX8698C_I2C_ADDR, REG_DVSINT2_1, 0x98); /* */
 #else
-	/* DVS Voltage tables setting 1.00 1.05 1.2 1.35  for VCCARM */
+	/* DVS Voltage tables setting 1.00 1.05 1.2 1.35  for VCCARM */ // FIXME 1.35? 1.30?
 	i2c_reg_write(MAX8698C_I2C_ADDR, REG_DVSARM2_1, 0x65); /* */
 	i2c_reg_write(MAX8698C_I2C_ADDR, REG_DVSARM4_3, 0xc9); /* */
 
@@ -143,9 +143,13 @@ void set_max8698c(void)
 
 #endif
 
-	i2c_reg_write(MAX8698C_I2C_ADDR, REG_LDO4, 0x0D); /* LDO4 = 2.9V */
-	i2c_reg_write(MAX8698C_I2C_ADDR, REG_LDO5, 0x02); /* LDO4 = 1.8V */
-//	i2c_reg_write(MAX8698C_I2C_ADDR, REG_LDO5, 0x11); /* LDO4 = 3.3V */
+//	i2c_reg_write(MAX8698C_I2C_ADDR, REG_LDO4, 0x0D); /* LDO4 = 2.9V */
+	i2c_reg_write(MAX8698C_I2C_ADDR, REG_LDO4, 0x11); /* LDO4 = 3.3V [LCD]*/
+
+	i2c_reg_write(MAX8698C_I2C_ADDR, REG_LDO5, 0x02); /* LDO5 = 1.8V [MMC2/GPJ Port I/O]*/
+//	i2c_reg_write(MAX8698C_I2C_ADDR, REG_LDO5, 0x11); /* LDO5 = 3.3V */
+
+	i2c_reg_write(MAX8698C_I2C_ADDR, REG_LDO9, 0x11); /* LDO9 = 3.3V [System I/O] */
 
 	i2c_reg_write(MAX8698C_I2C_ADDR, REG_ONOFF1, 0xFE); /* Turn LDO4,LDO5 on */
 	i2c_reg_write(MAX8698C_I2C_ADDR, REG_ONOFF2, 0xF0); 	/* Turn LDO7 on */
