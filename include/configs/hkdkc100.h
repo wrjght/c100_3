@@ -244,9 +244,10 @@
 #define CONFIG_STACKSIZE_FIQ	(4*1024)	/* FIQ stack */
 #endif
 
-#define CONFIG_CLK_666_166_66
-//#define CONFIG_CLK_833_166_66
-//#define CONFIG_HCLKD0_222 /* DDR bus clock = 222MHz */
+//#define CONFIG_CLK_666_166_66
+#define CONFIG_CLK_833_166_66
+#define CONFIG_HCLKD0_222 /* DDR bus clock = 222MHz */
+
 #if defined(CONFIG_CLK_666_166_66)
 #define APLL_MDIV       444
 #define APLL_PDIV       4
