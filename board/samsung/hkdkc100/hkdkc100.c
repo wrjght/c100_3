@@ -105,8 +105,8 @@ int gpio_init (void)
 	GPH1CON_REG &=  ~0xFF000000;
 	GPH0CON_REG &=  ~0x000F0000;
 
-	GPG0CON_REG = 0x1111;
-	GPG0DAT_REG = 0x3;
+	GPJ0CON_REG = 0x1111;
+	GPJ0DAT_REG = 0x3;
 
 	return 0;
 }
