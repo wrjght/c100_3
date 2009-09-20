@@ -156,7 +156,7 @@
 #define CONFIG_S3C_USBD
 
 //#define USBD_DOWN_ADDR		0xc0000000
-#define USBD_DOWN_ADDR		0xc0008000
+#define USBD_DOWN_ADDR		0x20008000
 
 /************************************************************
  * RTC
