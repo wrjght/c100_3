@@ -124,7 +124,7 @@ wait_for_dll_locking:
 		ldr     r1, =0x00010400                         @chip0 EMRS1 (MEM DLL on = DQS# disable)
         str     r1, [r0, #DMC_DIRECTCMD]
 
-        ldr     r1, =0x00000552                         @chip0 MRS (MEM DLL reset) CL=5
+        ldr     r1, =0x00000552                         @chip0 MRS (MEM DLL reset) CL=5, Burst Length=4
         str     r1, [r0, #DMC_DIRECTCMD]
 
         ldr     r1, =0x01000000                         @chip0 PALL
@@ -142,8 +142,11 @@ wait_for_dll_locking:
         ldr     r1, =0x00010780                         @chip0 EMRS1 (OCD default)
         str     r1, [r0, #DMC_DIRECTCMD]
 
-        ldr     r1, =0x00010400                         @chip0 EMRS1 (OCD exit)
-//        ldr     r1, =0x00010440                         @chip0 EMRS1 (OCD exit)
+
+// 	    ldr     r1, =0x00010400                         @chip0 EMRS1 (OCD exit)
+	    ldr     r1, =0x00010402                         @chip0 EMRS1 (OCD exit)  Reduced Strength
+//      ldr     r1, =0x00010000                         @chip0 EMRS1 (OCD exit)  ODT Disabled
+//      ldr     r1, =0x00010440                         @chip0 EMRS1 (OCD exit)
         str     r1, [r0, #DMC_DIRECTCMD]
 
         ldr     r1, =0x00FF20B0                         @ConControl PHY driving , auto refresh on , out of order scheduling
