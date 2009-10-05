@@ -257,6 +257,15 @@ void hsmmc_set_gpio (void)
 
         writel(0x00000000, GPG0PUD);
         writel(0x00000000, GPG1PUD);
+
+	/* Configure HS MMC1 GPIO by Justin */
+		writel(0x02222222, GPG2CON);
+
+		writel(0x00003FFF, GPG2DRV);
+
+		writel(0x00000000, GPG2PUD);
+
+
 }
 
 static void set_transfer_mode_register (uint MultiBlk, uint DataDirection, uint AutoCmd12En, uint BlockCntEn, uint DmaEn)
