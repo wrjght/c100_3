@@ -115,7 +115,6 @@ static void i2c_init_f (int speed, int slaveadd)
 /* 7.8us when 1000 */
 void set_max8698c(void)
 {
-
 	/* Configure output for PMIC_SET1~3, P3V3_EN, P5V_EN  */
 	GPH1CON_REG =  0x11111111;
 
@@ -145,10 +144,12 @@ void set_max8698c(void)
 
 //	i2c_reg_write(MAX8698C_I2C_ADDR, REG_BUCK3, 01); /*VCC_MEM = 1.7 */
 //	i2c_reg_write(MAX8698C_I2C_ADDR, REG_LDO4, 0x0D); /* LDO4 = 2.9V */
-	i2c_reg_write(MAX8698C_I2C_ADDR, REG_LDO4, 0x11); /* LDO4 = 3.3V [LCD]*/
-
-	i2c_reg_write(MAX8698C_I2C_ADDR, REG_LDO5, 0x02); /* LDO5 = 1.8V [MMC2/GPJ Port I/O]*/
+//	i2c_reg_write(MAX8698C_I2C_ADDR, REG_LDO4, 0x11); /* LDO4 = 3.3V [LCD]*/
+	i2c_reg_write(MAX8698C_I2C_ADDR, REG_LDO4, 0x0F); /* LDO4 = 3.0V [LCD]*/
+//	i2c_reg_write(MAX8698C_I2C_ADDR, REG_LDO5, 0x02); /* LDO5 = 1.8V [MMC2/GPJ Port I/O]*/
 //	i2c_reg_write(MAX8698C_I2C_ADDR, REG_LDO5, 0x11); /* LDO5 = 3.3V */
+	i2c_reg_write(MAX8698C_I2C_ADDR, REG_LDO5, 0x0F); /* LDO5 = 3.0V */
+
 
 //	i2c_reg_write(MAX8698C_I2C_ADDR, REG_LDO9, 0x11); /* LDO9 = 3.3V [System I/O] */
 
