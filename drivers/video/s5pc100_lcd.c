@@ -152,6 +152,20 @@ static void s3cfb_set_fimd_info(void)
 */
 }
 
+
+
+void draw_background(unsigned short color)
+{
+	unsigned short *fb16;
+	int j,k=0;
+
+	fb16 = (ushort *)(FB_START_ADD);
+
+	for(j=0;j<320*480+10000;j++) 
+		fb16[k++] = color;
+}
+
+
 void lcdc_init_f (void)
 {
 	int i,j,k;//, err;
@@ -216,12 +230,24 @@ void lcdc_init_f (void)
 				fb16 += (0x1001+0x96);
 			}
 */
+/*
 		for(j=0;j<160*320+200;j++) 
 			fb16[k++] = 0xf800;
 		for(j=0;j<160*320+200;j++)
 			fb16[k++] = 0x07e0;
 		for(j=0;j<(160*320+10000);j++)
 			fb16[k++] = 0x001f;
+*/
+
+		draw_background(0xAE46);
+/*
+		for(j=0;j<160*320+200;j++) 
+			fb16[k++] = 0xAE46;
+		for(j=0;j<160*320+200;j++)
+			fb16[k++] = 0xAE46;
+		for(j=0;j<(160*320+10000);j++)
+			fb16[k++] = 0xAE46;
+*/
 
 /*
 		for (i=0; i<(S3C_FB_VRES*S3C_FB_HRES)/2; i++) 
