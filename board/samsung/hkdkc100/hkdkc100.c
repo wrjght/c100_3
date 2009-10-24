@@ -109,10 +109,22 @@ int gpio_init (void)
 	GPJ0DAT_REG = 0x7;
 	//GPJ0DAT_REG = 0x0;
 
+	/* Keypad ABXY input & pull-up setup */
+	GPH3CON_REG &= 0xF0000000;
+	GPH3PUD_REG = 0x2AAA;
+
 	return 0;
 }
 
 extern void lcdc_init_f (void);
+extern void draw_background(unsigned short color);
+static inline int udelay_f(unsigned long usec)
+{
+	unsigned long loops = usec *300;
+	 __asm__ volatile ("1:\n" "subs %0, %1, #1\n" "bne 1b":"=r" (loops):"0"(loops));
+}
+
+#define mdelay(x)	udelay_f(1000*x)
 
 int board_init(void)
 {
@@ -128,6 +140,26 @@ int board_init(void)
 
 //	printf("\nBootsplash on LCD\n\n");
 	lcdc_init_f();
+
+	if( (GPH3DAT_REG&0x0F)==0x00)
+	{
+			mdelay(1000);
+			draw_background(0xf800);
+			mdelay(5000);
+//			while((GPH3DAT_REG&0x0F) == 0xF);
+			draw_background(0x07e0);
+			mdelay(5000);
+//			while((GPH3DAT_REG&0x0F) == 0xF);
+			draw_background(0x001f);
+			mdelay(5000);
+//			while((GPH3DAT_REG&0x0F) == 0xF);
+			draw_background(0x0000);			
+			mdelay(5000);
+//			while((GPH3DAT_REG&0x0F) == 0xF);
+			draw_background(0xFFFF);
+//			mdelay(5000);
+//			while((GPH3DAT_REG&0x0F) == 0xF);			
+	}
 
 #if 0
 	icache_enable();
