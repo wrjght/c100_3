@@ -1,0 +1,17 @@
+#
+# TO DO:
+# 	1. Integrate this module into U-boot
+#	2. Move this module into onenand_ipl
+#
+# djpark (2009.08.11)
+#
+
+Pre-condition:
+	../u-boot.bin
+
+Procedure:
+	./build.sh
+
+Output:
+	../u-boot-onenand.bin
+

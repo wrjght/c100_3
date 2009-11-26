@@ -19,14 +19,15 @@
 
 #if defined(CONFIG_S3C64XX) || defined(CONFIG_S5PC1XX)
 
-#include <s3c_onenand.h>
+//#include <s3c_onenand.h>
+#include <linux/mtd/s3c_onenand.h>
 
 #ifndef CFG_ONENAND_BASE_LIST
 #define CFG_ONENAND_BASE_LIST { CFG_ONENAND_BASE }
 #endif
 
 int onenand_curr_device = -1;
-onenand_info_t onenand_info[CFG_MAX_ONENAND_DEVICE];
+struct mtd_info onenand_info[CFG_MAX_ONENAND_DEVICE];
 
 static struct onenand_chip onenand_chip[CFG_MAX_ONENAND_DEVICE];
 static ulong base_address[CFG_MAX_ONENAND_DEVICE] = CFG_ONENAND_BASE_LIST;

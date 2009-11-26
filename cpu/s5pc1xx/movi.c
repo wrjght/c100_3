@@ -119,9 +119,12 @@ void set_max8698c(void)
 	GPH1CON_REG =  0x11111111;
 
 #if defined(CONFIG_CLK_666_166_66)
-	GPH1DAT_REG = 0x7E;
-#else
+//	GPH1DAT_REG = 0x7E;
 	GPH1DAT_REG = 0x7C;
+#else
+//	GPH1DAT_REG = 0x7C;
+	GPH1DAT_REG = 0x7E;
+
 #endif
 	i2c_init_f(CFG_I2C_SPEED, MAX8698C_I2C_ADDR);
 
@@ -138,11 +141,15 @@ void set_max8698c(void)
 	i2c_reg_write(MAX8698C_I2C_ADDR, REG_DVSARM4_3, 0xc9); /* */
 
 	/* DVS INT Voltage  1.0 1.2*/
-	i2c_reg_write(MAX8698C_I2C_ADDR, REG_DVSINT2_1, 0x97); /* */
+	//i2c_reg_write(MAX8698C_I2C_ADDR, REG_DVSINT2_1, 0x97); /* */
+	/* DVS INT Voltage  1.2 1.3 */
+//	i2c_reg_write(MAX8698C_I2C_ADDR, REG_DVSINT2_1, 0xb9); /* */
+	/* DVS INT Voltage  1.15 1.25 */
+	i2c_reg_write(MAX8698C_I2C_ADDR, REG_DVSINT2_1, 0xa8); /* */
 
 #endif
 
-//	i2c_reg_write(MAX8698C_I2C_ADDR, REG_BUCK3, 01); /*VCC_MEM = 1.7 */
+	i2c_reg_write(MAX8698C_I2C_ADDR, REG_BUCK3, 01); /*VCC_MEM = 1.7 */
 //	i2c_reg_write(MAX8698C_I2C_ADDR, REG_LDO4, 0x0D); /* LDO4 = 2.9V */
 	i2c_reg_write(MAX8698C_I2C_ADDR, REG_LDO4, 0x11); /* LDO4 = 3.3V [LCD]*/
 //	i2c_reg_write(MAX8698C_I2C_ADDR, REG_LDO4, 0x0F); /* LDO4 = 3.0V [LCD]*/

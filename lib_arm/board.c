@@ -399,6 +399,8 @@ void start_armboot (void)
 	mem_malloc_init (_armboot_start - CFG_MALLOC_LEN);
 #endif
 
+
+
 /* samsung socs: auto-detect devices */
 #if defined(CONFIG_SMDK6410) || defined(CONFIG_SMDK6430) || defined(CONFIG_SMDKC100) || defined(CONFIG_HKDKC100) || defined(CONFIG_JUDKC100)
 
@@ -414,6 +416,7 @@ void start_armboot (void)
 #else
 	movi_ch = 0;
 #endif
+
 	movi_set_capacity();
 	movi_set_ofs(MOVI_TOTAL_BLKCNT);
 	movi_init();

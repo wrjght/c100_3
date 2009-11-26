@@ -69,7 +69,6 @@ extern flash_info_t flash_info[]; /* info for FLASH chips */
 static int do_imls (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
 #endif
 
-
 static void print_type (image_header_t *hdr);
 
 #ifdef CONFIG_SILENT_CONSOLE

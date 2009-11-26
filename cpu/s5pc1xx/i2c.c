@@ -109,6 +109,7 @@ void i2c_init (int speed, int slaveadd)
 
 	/* calculate prescaler and divisor values */
 	freq = get_PCLK ();
+	
 #if 0	
 	if ((freq / pres / (16 + 1)) > speed)
 		/* set prescaler to 512 */
@@ -301,7 +302,6 @@ int i2c_probe (uchar chip)
 
 	buf[0] = 0;
 
-//	//printf("i2c_probe(%d)\n", chip);
 	/*
 	 * What is needed is to send the chip address and verify that the
 	 * address was <ACK>ed (i.e. there was a chip at that address which

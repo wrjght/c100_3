@@ -187,19 +187,43 @@ static void s3c_nand_ce_off(struct mtd_info *mtd)
 /*
  * Function for checking ECCEncDone in NFSTAT
  * Written by jsgood
+ * Modified by djpark: timeout checking
  */
 static void s3c_nand_wait_enc(void)
 {
-	while (!(readl(NFSTAT) & NFSTAT_ECCENCDONE)) {}
+	ulong start = get_timer(0);
+	ulong timeout = 10 * CFG_HZ / 1000;	// 10 ms ?
+	static int error_count = 0;
+	while (!(readl(NFSTAT) & NFSTAT_ECCENCDONE)) {
+		if (get_timer(start) > timeout) {
+			if (error_count++ < 5)
+				printk("s3c_nand_wait_enc: wait timeout!\n");
+			else
+				printk(".");
+			return;
+		}
+	}
 }
 
 /*
  * Function for checking ECCDecDone in NFSTAT
  * Written by jsgood
+ * Modified by djpark: timeout checking
  */
 static void s3c_nand_wait_dec(void)
 {
-	while (!(readl(NFSTAT) & NFSTAT_ECCDECDONE)) {}
+	ulong start = get_timer(0);
+	ulong timeout = 10 * CFG_HZ / 1000;	// 10 ms ?
+	static int error_count = 0;
+	while (!(readl(NFSTAT) & NFSTAT_ECCDECDONE)) {
+		if (get_timer(start) > timeout) {
+			if (error_count++ < 5)
+				printk("s3c_nand_wait_dec: wait timeout!\n");
+			else
+				printk(".");
+			return;
+		}
+	}
 }
 
 /*
@@ -402,7 +426,18 @@ static int s3c_nand_correct_data(struct mtd_info *mtd, u_char *dat, u_char *read
  ***************************************************************/
 static void s3c_nand_wait_ecc_busy_8bit(void)
 {
-	while (readl(NF8ECCERR0) & NFESTAT0_ECCBUSY) {}
+	ulong start = get_timer(0);
+	ulong timeout = 10 * CFG_HZ / 1000;	// 10 ms ?
+	static int error_count = 0;
+	while (readl(NF8ECCERR0) & NFESTAT0_ECCBUSY) {
+		if (get_timer(start) > timeout) {
+			if (error_count++ < 5)
+				printk("s3c_nand_wait_ecc_busy_8bit: wait timeout!\n");
+			else
+				printk(".");
+			return;
+		}
+	}
 }
 
 void s3c_nand_enable_hwecc_8bit(struct mtd_info *mtd, int mode)

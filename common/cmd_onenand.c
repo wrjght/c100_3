@@ -1,18 +1,10 @@
 /*
- * Driver for NAND support, Rick Bronson
- * borrowed heavily from:
- * (c) 1999 Machine Vision Holdings, Inc.
- * (c) 1999, 2000 David Woodhouse <dwmw2@infradead.org>
- *
- * Added 16-bit nand support
- * (C) 2004 Texas Instruments
+ * U-Boot command for OneNAND device
  */
 
 #include <common.h>
-
-#if defined(CONFIG_ONENAND)
-
-#if defined(CONFIG_S3C64XX) || defined(CONFIG_S5PC1XX)
+#ifdef CONFIG_CMD_ONENAND
+#if defined(CONFIG_S5PC1XX)
 
 /*
  *
@@ -32,50 +24,43 @@
 # define SHOW_BOOT_PROGRESS(arg)
 #endif
 
-#include <jffs2/jffs2.h>
-
 #if defined(CONFIG_S3C6400) || defined(CONFIG_S3C6410) || defined(CONFIG_S3C6430) || defined(CONFIG_S5PC100)
-#include <s3c_onenand.h>
+//#include <s3c_onenand.h>
+#include <linux/mtd/s3c_onenand.h>
 #else
 #include <onenand.h>
 #endif
 
-#define cpu_to_je16(x) (x)
-#define cpu_to_je32(x) (x)
-
-extern onenand_info_t onenand_info[];       /* info for OneNAND chips */
+extern int onenand_curr_device;
+extern struct mtd_info onenand_info[];       /* info for OneNAND chips */
 extern void onenand_print_device_info(int device, int version);
 
-struct jffs2_clean_oob {
-	struct jffs2_unknown_node cleanmarker;
-	uchar empty[52];
-};
-
-static int onenand_dump_oob(onenand_info_t *nand, ulong off)
+static int onenand_dump_oob(struct mtd_info *mtd, ulong off)
 {
 	int i;
-	struct mtd_oob_ops ops;
-	u_int8_t *p, *buf;
+	u_int8_t *p;
+	u_int8_t *buf;
+	struct mtd_oob_ops ops = {
+		.mode		= MTD_OOB_PLACE,
+		.datbuf		= NULL,
+	};
 
-	buf = malloc(nand->oobsize);
-	memset(buf, 0xff, nand->oobsize);
+	buf = malloc(mtd->oobsize);
+	memset(buf, 0xff, mtd->oobsize);
 
-//	ops.ooboffs = nand->writesize;
-	ops.mode = MTD_OOB_PLACE;
 	ops.oobbuf = buf;
-
 	if (ops.mode == MTD_OOB_AUTO)
-		ops.ooblen = nand->oobavail;
+		ops.ooblen = mtd->oobavail;
 	else
-		ops.ooblen = nand->oobsize;
+		ops.ooblen = mtd->oobsize;
 
-	nand->read_oob(nand, off, &ops);
+	mtd->read_oob(mtd, off, &ops);
 
 	puts("OOB:\n");
 
 	p = ops.oobbuf;
 
-	i = nand->oobsize >> 3;
+	i = mtd->oobsize >> 3;
 	
 	while (i--) {
 		printf( "\t%02x %02x %02x %02x %02x %02x %02x %02x\n",
@@ -88,59 +73,18 @@ static int onenand_dump_oob(onenand_info_t *nand, ulong off)
 	return 0;
 }
 
-static int onenand_write_oob(onenand_info_t *nand, ulong off, uchar *buf, int mode)
-{
-	struct mtd_oob_ops ops;
-
-	ops.ooboffs = nand->writesize;
-	ops.mode = mode;
-	ops.oobbuf = buf;
-
-	if (ops.mode == MTD_OOB_AUTO)
-		ops.ooblen = nand->oobavail;
-	else
-		ops.ooblen = nand->oobsize;
-
-	nand->write_oob(nand, off, &ops);
-
-	return 0;
-}
-
-static int onenand_write_cleanmarker(onenand_info_t *nand, ulong off, ulong size)
-{
-	struct jffs2_clean_oob oob;
-	int block_size;
-
-	memset(&oob.cleanmarker, 0, sizeof(oob.cleanmarker));
-	memset(oob.empty, 0xff, sizeof(oob.empty));
-
-	oob.cleanmarker.magic = cpu_to_je16 (JFFS2_MAGIC_BITMASK);
-	oob.cleanmarker.nodetype = cpu_to_je16 (JFFS2_NODETYPE_CLEANMARKER);
-	oob.cleanmarker.totlen = cpu_to_je32(8);
-
-	block_size = nand->erasesize;
-
-	while (size) {
-		onenand_write_oob(nand, off, (uchar *)&oob, MTD_OOB_AUTO);
-		off += block_size;
-		size -= block_size;
-	}
-
-	return 0;
-}
-
-static int onenand_dump(onenand_info_t *nand, ulong off)
+static int onenand_dump(struct mtd_info *mtd, ulong off)
 {
 	int i;
 	u_int8_t *p, *buf;
-	size_t len = nand->writesize;
+	size_t len = mtd->writesize;
 
 	buf = malloc(len);
 	memset(buf, 0xff, len);
 
-	onenand_read(nand, off, &len, buf);
+	mtd->read(mtd, off, len, &len, (u_char *)buf);
 
-	i = nand->writesize >> 4;
+	i = mtd->writesize >> 4;
 	p = buf;
 
 	printf("Page %08x dump:\n", (unsigned int) off);
@@ -153,11 +97,185 @@ static int onenand_dump(onenand_info_t *nand, ulong off)
 		p += 16;
 	}
 
-	onenand_dump_oob(nand, off);
+	onenand_dump_oob(mtd, off);
 
 	free(buf);
 
 	return 0;
+}
+
+static int onenand_block_read(struct mtd_info *mtd,
+			loff_t from, size_t len,	size_t *retlen, u_char *buf)
+{
+	struct onenand_chip *this = mtd->priv;
+	int blocks = (int) len >> this->erase_shift;
+	int blocksize = (1 << this->erase_shift);
+	loff_t ofs = from;
+	size_t _retlen = 0, _tmp;
+	int ret;
+
+	if (ofs & (mtd->erasesize - 1)) {
+		printk(" ERROR: starting address %x is not a block start address\n",
+				(unsigned int) ofs);
+		return 1;
+	}
+
+	if (len & (mtd->erasesize - 1)) {
+		printk(" ERROR: length is not block aligned\n", (unsigned int) len);
+		return 1;
+	}
+
+	printk("Main area read (%d blocks):\n", blocks);
+
+	while (blocks) {
+		if ((ofs & (mtd->erasesize - 1)) == 0) {
+			ret = mtd->block_isbad(mtd, ofs);
+			if (ret) {
+				printk("Bad blocks %d at 0x%x\n",
+				       (u32)(ofs >> this->erase_shift), (u32)ofs);
+				ofs += blocksize;
+				continue;
+			}
+		}
+
+		ret = mtd->read(mtd, ofs, blocksize, &_tmp, (u_char *)buf);
+		if (ret) {
+			printk("Read failed 0x%x, %d\n", (u32)ofs, ret);
+			ofs += blocksize;
+			continue;
+		}
+		ofs += blocksize;
+		buf += blocksize;
+		blocks--;
+		_retlen += _tmp;
+	}
+
+	*retlen = _retlen;
+
+	return 0;
+}
+
+static int onenand_block_write(struct mtd_info *mtd,
+			loff_t to, size_t len, size_t *retlen, const u_char * buf)
+{
+	struct onenand_chip *this = mtd->priv;
+	int blocks = (int) len >> this->erase_shift;
+	int blocksize = (1 << this->erase_shift);
+	loff_t ofs = to;
+	size_t _retlen = 0, _tmp;
+	int ret;
+
+	if (ofs & (mtd->erasesize - 1)) {
+		printk(" ERROR: starting address %x is not a block start address\n",
+				(unsigned int) ofs);
+		return 1;
+	}
+
+	if (len & (mtd->erasesize - 1)) {
+		printk(" ERROR: length is not block aligned\n", (unsigned int) len);
+		return 1;
+	}
+
+	printk("Main area write (%d blocks):\n", blocks);
+
+	while (blocks) {
+		if ((ofs & (mtd->erasesize - 1)) == 0) {
+			ret = mtd->block_isbad(mtd, ofs);
+			if (ret) {
+				printk("Bad blocks %d at 0x%x is skipped.\n",
+				       (u32)(ofs >> this->erase_shift), (u32)ofs);
+				ofs += blocksize;
+				//udelay(1000);
+				continue;
+			}
+		}
+
+		ret = mtd->write(mtd, ofs, blocksize, &_tmp, buf);
+		if (ret) {
+			printk("Write failed 0x%x, %d", (u32)ofs, ret);
+			ofs += blocksize;
+			continue;
+		}
+
+		ofs += blocksize;
+		buf += blocksize;
+		blocks--;
+		_retlen += _tmp;
+	}
+
+	*retlen = _retlen;
+
+	return 0;
+}
+
+static int onenand_write_yaffs2(struct mtd_info *mtd,
+			loff_t to, size_t len, size_t *retlen, const u_char * buf)
+{
+	struct onenand_chip *this = mtd->priv;
+	loff_t ofs = to;
+	struct mtd_oob_ops ops = {
+		.retlen		= 0,
+	};
+	size_t _retlen = 0;
+	size_t written = 0;
+	int ret;
+
+	if (ofs & (mtd->erasesize - 1)) {
+		printk(" ERROR starting address %x is not a block start address\n",
+				(unsigned int) ofs);
+		return 1;
+	}
+
+	printk("Yaffs2 write:\n");
+
+	ops.mode = MTD_OOB_AUTO;
+	ops.len = mtd->writesize;
+	ops.ooblen = mtd->oobsize;
+
+	while (written < len) {
+		if ((ofs & (mtd->erasesize - 1)) == 0) {
+			ret = mtd->block_isbad(mtd, ofs);
+			if (ret) {
+				printk("Bad blocks %d at 0x%x is skipped.\n",
+				       (int) ofs >> this->erase_shift, (u32)ofs);
+
+				ofs += mtd->erasesize;
+				continue;
+			}
+			printk("\rWriting data at 0x%08x -- %3d%% complete.", (u32)ofs, ((written*4)/(len/25))+1);
+		}
+
+		ops.datbuf = (u_int8_t*)buf;
+		ops.oobbuf = (u_int8_t*)buf + mtd->writesize;
+
+		ret = mtd->write_oob(mtd, ofs, &ops);
+		if (ret) {
+			printk("ERROR: Write failed 0x%x, %d", (u32)ofs, ret);
+			return 1;
+		}
+
+		buf += mtd->writesize + mtd->oobsize;
+		written += mtd->writesize + mtd->oobsize;
+		_retlen += ops.retlen;
+		ofs += mtd->writesize;
+	}
+
+	printk("\n");
+	*retlen = _retlen;
+
+	return 0;
+}
+
+static int onenand_erase(struct mtd_info *mtd, ulong off, ulong size)
+{
+    struct erase_info instr;
+
+    instr.mtd = mtd;
+    instr.addr = off;
+    instr.len = size;
+    instr.callback = 0;
+
+    return mtd->erase(mtd, &instr);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -212,9 +330,9 @@ int do_onenand(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
 {
 	int i, dev, ret = 1;
 	ulong addr, off;
-	size_t size;
+	size_t size, retlen=0;
 	char *cmd, *s;
-	onenand_info_t *nand;
+	struct mtd_info *onenand;
 
 	/* at least two arguments please */
 	if (argc < 2)
@@ -258,7 +376,7 @@ int do_onenand(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
 		return 0;
 	}
 
-	if (strcmp(cmd, "bad") != 0 && strcmp(cmd, "erase") != 0 &&
+	if (strcmp(cmd, "bad") != 0 && strcmp(cmd, "scrub") != 0 && strcmp(cmd, "erase") != 0 &&
 	    strncmp(cmd, "dump", 4) != 0 && strncmp(cmd, "writeoob", 8) != 0 &&
 	    strncmp(cmd, "read", 4) != 0 && strncmp(cmd, "write", 5) != 0 &&
 	    strncmp(cmd, "lock", 4) != 0)
@@ -271,23 +389,39 @@ int do_onenand(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
 		puts("\nno devices available\n");
 		return 1;
 	}
-	nand = &onenand_info[onenand_curr_device];
+	onenand = &onenand_info[onenand_curr_device];
 
 	if (strcmp(cmd, "bad") == 0) {
 		printf("\nDevice %d bad blocks:\n", onenand_curr_device);
-		for (off = 0; off < nand->size; off += nand->erasesize)
-			if (onenand_block_isbad(nand, off))
+		for (off = 0; off < onenand->size; off += onenand->erasesize)
+			if (onenand->block_isbad(onenand, off))
 				printf("  %08x\n", (unsigned int) off);
 		return 0;
 	}
 
-	if (strcmp(cmd, "erase") == 0) {
-		int clean = argc > 2 && !strcmp("clean", argv[2]);
+	if (strcmp(cmd, "scrub") == 0) {
+		struct onenand_chip *this = (onenand->priv);
+		unsigned int options_backup = this->options;
 
-		if (clean)
-			arg_off_size(argc - 3, argv + 3, &off, &size, nand->size);
-		else		
-			arg_off_size(argc - 2, argv + 2, &off, &size, nand->size);
+		printf("\nOneNAND scrub: device %d\n", onenand_curr_device);
+
+		this->options &= ~ONENAND_CHECK_BAD;
+		for (off = 0; off < onenand->size; off += onenand->erasesize) {
+			if (onenand->block_isbad(onenand, off)) {
+				printf("  %08x - ", (unsigned int) off);
+				if (ret = onenand_erase(onenand, off, onenand->erasesize)) {
+					printf("FAILED!!!\n");
+				}
+				printf("OK\n");
+			}
+		}
+		this->options = options_backup;
+
+		return ret == 0 ? 0 : 1;
+	}
+
+	if (strcmp(cmd, "erase") == 0) {
+		arg_off_size(argc - 2, argv + 2, &off, &size, onenand->size);
 		
 		if (off == 0 && size == 0)
 			return 1;		
@@ -295,15 +429,9 @@ int do_onenand(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
 		printf("\nOneNAND erase: device %d offset 0x%x, size 0x%x ",
 		       onenand_curr_device, (unsigned int) off, size);
 
-		ret = onenand_erase(nand, off, size);
+		ret = onenand_erase(onenand, off, size);
 
 		printf("%s\n", ret ? "ERROR" : "OK");
-
-		if (clean) {
-			printf("OneNAND erase: device %d offset 0x%x, size 0x%x, writing jffs2 cleanmarker\n", onenand_curr_device, (unsigned int) off, size);
-			ret = onenand_write_cleanmarker(nand, off, size);
-			printf("%s\n", ret ? "ERROR" : "OK");
-		}
 
 		return ret == 0 ? 0 : 1;
 	}
@@ -316,23 +444,12 @@ int do_onenand(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
 		off = (int)simple_strtoul(argv[2], NULL, 16);
 
 		if (s != NULL && strcmp(s, ".oob") == 0)
-			ret = onenand_dump_oob(nand, off);
+			ret = onenand_dump_oob(onenand, off);
 		else
-			ret = onenand_dump(nand, off);
+			ret = onenand_dump(onenand, off);
 
 		return ret == 0 ? 1 : 0;
 
-	}
-
-	if (strncmp(cmd, "writeoob", 8) == 0) {
-		if (argc < 4)
-			goto usage;
-
-		addr = (ulong)simple_strtoul(argv[2], NULL, 16);
-		off = (int)simple_strtoul(argv[3], NULL, 16);
-		ret = onenand_write_oob(nand, off, (u_char *)addr, MTD_OOB_PLACE);
-
-		return ret == 0 ? 1 : 0;
 	}
 
 	/* read write */
@@ -341,94 +458,37 @@ int do_onenand(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
 		if (argc < 4)
 			goto usage;
 		s = strchr(cmd, '.');
-#if 0
-		clean = CLEAN_NONE;
-		if (s != NULL) {
-			if (strcmp(s, ".jffs2") == 0 || strcmp(s, ".e") == 0
-			    || strcmp(s, ".i"))
-				clean = CLEAN_JFFS2;
-		}
-#endif
 		if (s != NULL) {
 			if (strcmp(s, ".yaffs2") == 0)
 				yaffs_write = 1;
 		}
 		addr = (ulong)simple_strtoul(argv[2], NULL, 16);
 
-		arg_off_size(argc - 3, argv + 3, &off, &size, nand->size);
+		arg_off_size(argc - 3, argv + 3, &off, &size, onenand->size);
 		if (off == 0 && size == 0)
 			return 1;
 
 		i = strncmp(cmd, "read", 4) == 0;	/* 1 = read, 0 = write */
-		printf("\nOneNAND %s: device %d offset %x, size %x  addr %x... ",
+		printf("\nOneNAND %s: device %d offset %x, size %x  addr %x... \n",
 		       i ? "read" : "write", onenand_curr_device, (unsigned int) off, size, (unsigned int) addr);
 
-		if (i)
-			ret = onenand_read(nand, off, &size, (u_char *)addr);
+		if (i) {
+			ret = onenand_block_read(onenand, off, size, &retlen, (u_char *)addr);
+		}
 		else {
 			if(!yaffs_write) {
-				ret = onenand_write(nand, off, &size, (u_char *)addr);
+				ret = onenand_block_write(onenand, off, size, &retlen, (u_char *)addr);
 			}else {
-				u32 written = 0;
-				size_t write_size;
-
-				printf("\nyaffs_write :");
-				if(off % nand->erasesize !=0) {
-					printf(" ERROR starting address %x is not a block start address\n", (unsigned int) off);
-					return 1;
-				}
-				while (written < size) {
-					if(off % nand->erasesize == 0) {
-						// Start of a new block, 
-						if(off >= nand->size) {
-							printf(" ERROR reached end of flash, no more free space.\n ");
-							return 1;
-						}
-						//Check whether the block is bad. if not erase it.
-						if(onenand_block_isbad(nand,off)){
-							printf("yaffs_write Skipping bad block %d at %x\n", 
-								(int) off/nand->erasesize, (unsigned int) off);
-							off += nand->erasesize;
-							continue;
-						}else {
-							ret = onenand_erase(nand,off,nand->erasesize);
-							if(ret) {
-								printf("yaffswrite: erasing block %d @ %x failed, skipping\n", 
-									(int) off/nand->erasesize, (unsigned int) off);
-	
-								off += nand->erasesize;
-								continue;
+				ret = onenand_write_yaffs2(onenand, off, size, &retlen, (u_char *)addr);
 							}
-
 						}
-						printf(" %4d", (int) off/nand->erasesize);
-					}
-					write_size = nand->writesize;
-					/* org: ret = onenand_write_ecc(nand, off, &write_size, (u_char *)addr,(u_char*)(addr+nand->writesize),NULL); */
-					ret = onenand_write(nand, (unsigned int) off, &write_size, (u_char *)addr);
-					if(ret) 
-						return 1;
-					
-					addr += nand->writesize;
-					written += nand->writesize;
-
-					ret = onenand_write_oob(nand, off, (u_char *)addr, MTD_OOB_AUTO);
-					if(ret) 
-						return 1;
-					
-					addr += nand->oobsize;
-					written += nand->oobsize;
-					
-					off += nand->writesize;
-				}
-			}
-		}
-		printf(" %d bytes %s: %s\n", size,
+		printf("%d bytes %s: %s\n", retlen,
 		       i ? "read" : "written", ret ? "ERROR" : "OK");
 
 		return ret == 0 ? 0 : 1;
 	}
 
+#if 0
 	if (strncmp(cmd, "lock", 4) == 0) {
 		int lock = 0;
 		if (argc != 5)
@@ -441,21 +501,22 @@ int do_onenand(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
 		else
 			goto usage;
 
-		arg_off_size(argc - 3, argv + 3, &off, &size, nand->size);
+		arg_off_size(argc - 3, argv + 3, &off, &size, onenand->size);
 		if (off == 0 && size == 0)
 			return 1;
 		printf("\nOneNAND %slock: device %d offset 0x%x, size 0x%x ",
 		       lock ? "":"un", onenand_curr_device, (unsigned int) off, size);
 
 		if (lock) {
-			ret = onenand_lock(nand, off, size);
+			ret = onenand_lock(onenand, off, size);
 		}
 		else {
-			ret = onenand_unlock(nand, off, size);
+			ret = onenand_unlock(onenand, off, size);
 		}
 		printf(": %s\n", ret ? "ERROR":"OK");
 		return ret == 0 ? 0 : 1;
 	}
+#endif
 
 usage:
 	printf("Usage:\n%s\n", cmdtp->usage);
@@ -466,18 +527,17 @@ U_BOOT_CMD(onenand, 5, 0, do_onenand,
 	"onenand - OneNAND sub-system\n",
 	"info                  - show available OneNAND devices\n"
 	"onenand device [dev]     - show or set current device\n"
-	"onenand read[.jffs2]     - addr off size\n"
-	"onenand write[.jffs2/.yaffs2]    - addr off size - read/write `size' bytes starting\n"
+	"onenand read     - addr off size\n"
+	"onenand write[.yaffs2]    - addr off size - read/write `size' bytes starting\n"
 	"    at offset `off' to/from memory address `addr'\n"
-	"onenand erase [clean] [off size] - erase `size' bytes from\n"
+	"onenand erase [off size] - erase `size' bytes from\n"
 	"    offset `off' (entire device if not specified)\n"
 	"onenand bad - show bad blocks\n"
 	"onenand dump[.oob] off - dump page\n"
 	"onenand scrub - really clean NAND erasing bad blocks (UNSAFE)\n"
-	"onenand markbad off - mark bad block at offset (UNSAFE)\n"
-	"onenand biterr off - make a bit error at offset (UNSAFE)\n"
-	"onenand lock <on/off> <offset> <size> - lock/unlock OneNAND Block\n" );
+	"onenand markbad off - mark bad block at offset (UNSAFE)\n");
 
+#if 0
 int do_onenandboot(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
 {
 	char *boot_device = NULL;
@@ -486,7 +546,7 @@ int do_onenandboot(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
 	int r;
 	unsigned int addr, cnt, offset = 0;
 	image_header_t *hdr;
-	onenand_info_t *nand;
+	struct mtd_info *onenand;
 
 	switch (argc) {
 	case 1:
@@ -526,12 +586,12 @@ int do_onenandboot(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
 		return 1;
 	}
 
-	nand = &onenand_info[dev];
+	onenand = &onenand_info[dev];
 	printf("\nLoading from device %d: %s (offset 0x%lx)\n",
-	       dev, nand->name, (ulong) offset);
+	       dev, onenand->name, (ulong) offset);
 
-	cnt = nand->writesize;
-	r = onenand_read(nand, offset, &cnt, (u_char *) addr);
+	cnt = onenand->writesize;
+	r = onenand_read(onenand, offset, &cnt, (u_char *) addr);
 	if (r) {
 		printf("** Read error on %d\n", dev);
 		SHOW_BOOT_PROGRESS(-1);
@@ -550,7 +610,7 @@ int do_onenandboot(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
 
 	cnt = (ntohl(hdr->ih_size) + sizeof (image_header_t));
 
-	r = onenand_read(nand, offset, &cnt, (u_char *) addr);
+	r = onenand_read(onenand, offset, &cnt, (u_char *) addr);
 	if (r) {
 		printf("** Read error on %d\n", dev);
 		SHOW_BOOT_PROGRESS(-1);
@@ -579,106 +639,7 @@ int do_onenandboot(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
 
 U_BOOT_CMD(oneboot, 4, 1, do_onenandboot,
 	"oneboot - boot from NAND device\n", "loadAddr dev\n");
-
-#ifndef CONFIG_REMOVE_OLD_ONENAND_CMD
-
-int cpage_size = 2048;
-int cpages_in_block = 64;
-int coob_size = 64;
-int cblock_size = 0x20000;
-int ctotal_blocks = 2048;
-
-int do_onenand_erase (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
-{
-	char temp[100];
-	int startblk, size;
-
-	if ( argc != 3 ){
-		printf ("Usage:\n%s\n", cmdtp->usage);
-		return 1;
-	}
-	startblk = simple_strtoul(argv[1], NULL, 16);
-	size  = simple_strtoul(argv[2], NULL, 16);
-
-	sprintf(temp, "onenand erase %x %x", startblk * cblock_size, size);
-	run_command(temp, 0);
-	printf("use \"%s\" instead of this command\n", temp);
-	return 0;
-}
-
-int do_onenand_write (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
-{
-	char temp[100];
-	unsigned int startblk, size, memadr;
-
-	if (argc !=  4) {
-		printf ("Usage:\n%s\n", cmdtp->usage);
-		return 1;
-	}
-
-	startblk = simple_strtoul(argv[1], NULL, 16);
-	size  = simple_strtoul(argv[2], NULL, 16);
-	memadr = simple_strtoul(argv[3], NULL, 16);
-
-	sprintf(temp, "onenand erase %x %x; onenand write %x %x %x",
-		startblk * cblock_size, size,
-		memadr, startblk * cblock_size, size);
-	run_command(temp, 0);
-	printf("\n\nuse \"%s\" instead of this command\n", temp);
-
-	return 0;
-}
-
-int do_onenand_read (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
-{
-	char temp[100];
-	unsigned int startblk, size, memadr;
-
-	if (argc !=  4) {
-		printf ("Usage:\n%s\n", cmdtp->usage);
-		return 1;
-	}
-
-	startblk = simple_strtoul(argv[1], NULL, 16);
-	size  = simple_strtoul(argv[2], NULL, 16);
-	memadr = simple_strtoul(argv[3], NULL, 16);
-
-	sprintf(temp, "onenand read %x %x %x", memadr, startblk*cblock_size, size);
-	run_command(temp, 0);
-	printf("use \"%s\" instead of this command\n", temp);
-
-	return 0;
-}
-
-int do_onenand_bbcheck (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
-{
-	run_command("onenand bad", 0);
-	printf("use \"onenand bad\" instead of this command\n");
-
-	return 0;
-}
-
-U_BOOT_CMD(onenande,	4,	0,	do_onenand_erase,
-       "onenande  startBlock size \n",
-       "	- delete blocks in onenand while skipping bad block \n");
-
-U_BOOT_CMD(onenandr,	4,	0,	do_onenand_read,
-	 "onenandr - HEX: targetblock targetsize mem_adr \n",
-	 "\n	-SMDK24X0 ONE NAND Flash Read Program\n"
-	 "onenandr targetblock, targetsize memory addr \n");
-
-U_BOOT_CMD(onenandw,	4,	0,	do_onenand_write,
-       "onenandw  HEX: targetblock targetsize mem_addr \n",
-       "\n	- SMDK24X0 NAND Flash Write Program\n"
-       "onenandw targetblock targetsize memory addr \n");
-
-U_BOOT_CMD(onebbcheck,    3,  0,  do_onenand_bbcheck,
-       "onebbcheck \n",
-       "\n  - Shows all the bad blocks in the onenand memory");
 #endif
 
-#endif	/* end of CONFIG_S3C64XX */
-
-#endif  /* end of CONFIG_ONENAND */
-	
-
+#endif	/* end of CONFIG_S5PC1XX */
+#endif 	/* end of CONFIG_CMD_ONENAND*/

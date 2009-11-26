@@ -72,12 +72,10 @@ lowlevel_init:
 
 	bl dma_init
 	
+#if defined(CONFIG_NAND)
 	/* NAND GPIO PIN MUX */
 	bl nand_pin_mux	
-	
-	
 
-#if defined(CONFIG_NAND)
 	/* simple init for NAND */
 	bl nand_asm_init
 #endif
@@ -216,23 +214,24 @@ uart_asm_init:
 	mov	pc, lr
 
 
-
+#if defined(CONFIG_NAND)
 /*
  *   Init GPK0CON/GPK2CON for NFCON
  */
 nand_pin_mux:
 
-        ldr     r0, =0xe03002a0  	// GPK0CON
-        ldr     r1, =0x22443322
-        str     r1, [r0]
-        ldr     r0, =0xe03002e0  	// GPK2CON
-        ldr     r1, =0x33333333
-        str     r1, [r0]
+    ldr r0, =0xe03002a0  	// GPK0CON
+    ldr r1, =0x22443322
+    str r1, [r0]
+    ldr r0, =0xe03002e0  	// GPK2CON
+    ldr r1, =0x33333333
+    str r1, [r0]
 
 	mov	pc, lr
+#endif
 
 
-
+#if defined(CONFIG_NAND)
 /*
  * Nand Interface Init for SMDKC100
  */
@@ -249,6 +248,8 @@ nand_asm_init:
 	str     r1, [r0, #NFCONT_OFFSET]
 
 	mov	pc, lr
+#endif
+
 
 /*
  * Setting for DMA
@@ -308,6 +309,7 @@ mmu_table:
 	.word 0x00000000
 	.endr
 
+#if defined(CONFIG_NAND)
 	.set __base,0x200
 	// should be accessed
 	.rept 0x300 - 0x200
@@ -351,12 +353,104 @@ mmu_table:
 	.word 0x00000000
 	.endr
 */
+
 	.set __base,0xD00
 	// 1:1 mapping for debugging with non-cacheable
 	.rept 0x1000 - 0xD00
 	FL_SECTION_ENTRY __base,3,0,0,0
 	.set __base,__base+1
 	.endr
+#elif defined(CONFIG_SMDKC100_POP_AC)
+	.set __base,0x200
+	// should be accessed
+	.rept 0x2D0 - 0x200
+	FL_SECTION_ENTRY __base,3,0,1,1
+	.set __base,__base+1
+	.endr
 
+	.rept 0x800 - 0x2D0
+	.word 0x00000000
+	.endr
+
+	.set __base,0x800
+	// should be accessed
+	.rept 0xb00 - 0x800
+	FL_SECTION_ENTRY __base,3,0,0,0
+	.set __base,__base+1
+	.endr
+/*
+	.rept 0xc00 - 0xb00
+	.word 0x00000000
+	.endr
+*/
+	.set __base,0xB00
+	.rept 0xc00 - 0xB00
+	FL_SECTION_ENTRY __base,3,0,0,0
+	.set __base,__base+1
+	.endr
+
+	.set __base,0x200
+	// 128MB for SDRAM with cacheable
+	.rept 0xCD0 - 0xC00
+	FL_SECTION_ENTRY __base,3,0,1,1
+	.set __base,__base+1
+	.endr
+
+	// access is not allowed.
+	.rept 0xD00 - 0xCD0
+	.word 0x00000000
+	.endr
+
+	.set __base,0xD00
+	// 1:1 mapping for debugging with non-cacheable
+	.rept 0x1000 - 0xD00
+	FL_SECTION_ENTRY __base,3,0,0,0
+	.set __base,__base+1
+	.endr
+#elif defined(CONFIG_SMDKC100_POP_D)
+	.set __base,0x200
+	// should be accessed
+	.rept 0x380 - 0x200
+	FL_SECTION_ENTRY __base,3,0,1,1
+	.set __base,__base+1
+	.endr
+
+	.rept 0x800 - 0x380
+	.word 0x00000000
+	.endr
+
+	.set __base,0x800
+	// should be accessed
+	.rept 0xb00 - 0x800
+	FL_SECTION_ENTRY __base,3,0,0,0
+	.set __base,__base+1
+	.endr
+/*
+	.rept 0xc00 - 0xb00
+	.word 0x00000000
+	.endr
+*/
+	.set __base,0xB00
+	.rept 0xC00 - 0xB00
+	FL_SECTION_ENTRY __base,3,0,0,0
+	.set __base,__base+1
+	.endr
+
+	.set __base,0x200
+	// 384MB for SDRAM with cacheable
+	.rept 0xD00 - 0xC00
+	FL_SECTION_ENTRY __base,3,0,1,1
+	.set __base,__base+1
+	.endr
+
+	.set __base,0xD00
+	// 1:1 mapping for debugging with non-cacheable
+	.rept 0x1000 - 0xD00
+	FL_SECTION_ENTRY __base,3,0,0,0
+	.set __base,__base+1
+	.endr
+#else
 #endif
+
+#endif	// CONFIG_ENABLE_MMU
 

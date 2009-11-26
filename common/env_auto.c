@@ -48,6 +48,10 @@
 /* info for NAND chips, defined in drivers/nand/nand.c */
 extern nand_info_t nand_info[];
 
+#if defined(CONFIG_CMD_ONENAND)
+/* info for OneNAND chips */
+extern struct mtd_info onenand_info[];
+#endif
 /* references to names in env_common.c */
 extern uchar default_environment[];
 extern int default_environment_size;
@@ -146,28 +150,25 @@ int saveenv_nand(void)
 	size_t total;
 	int ret = 0;
 
-	puts("#0 Erasing Nand...");
-//	nand_erase(&nand_info[0], CFG_ENV_OFFSET, CFG_ENV_SIZE);
-
-//#ifndef CONFIG_S5PC100_EVT1
-	if (nand_erase(&nand_info[0], CFG_ENV_OFFSET, CFG_ENV_SIZE))
+	puts("#1 Erasing Nand...");
+	if (nand_erase(&nand_info[0], CFG_ENV_OFFSET, CFG_ENV_SIZE)) {
+		puts("failed2-nand_write\n");
 		return 1;
-//#endif
+	}
 
-	puts("#0 Writing to Nand... ");
+	puts("#2 Writing to Nand... ");
 	total = CFG_ENV_SIZE;
 
-//#ifndef CONFIG_S5PC100_EVT1
 	ret = nand_write(&nand_info[0], CFG_ENV_OFFSET, &total, (u_char*) env_ptr);
-	if (ret || total != CFG_ENV_SIZE)
+	if (ret || total != CFG_ENV_SIZE) {
+		puts("failed2-nand_write\n");
 		return 1;
-//#endif
+	}
 
 	puts("done\n");
 	return ret;
-#endif	
+#endif
 }
-
 
 
 // Modified saveenv_nand_adv() to saveenv_nand() (WC Jang)
@@ -181,35 +182,44 @@ int saveenv_nand_adv(void)
 	total = CFG_ENV_OFFSET;
 
 	tmp = (u_char *) malloc(total);
-	nand_read(&nand_info[0], 0x0, &total, (u_char *) tmp);
+	if (tmp == NULL) {
+		puts("malloc is failed\n");
+		return 1;
+	}
+	ret = nand_read(&nand_info[0], 0x0, &total, (u_char *) tmp);
+	if (ret || total != CFG_ENV_OFFSET) {
+		puts("failed1-nand_read\n");
+		free(tmp);
+		return 1;
+	}
 
 	puts("#1 Erasing Nand...");
-//	nand_erase(&nand_info[0], 0x0, CFG_ENV_OFFSET + CFG_ENV_SIZE);
-
-#ifndef CONFIG_S5PC100_EVT1
 	if (nand_erase(&nand_info[0], 0x0, CFG_ENV_OFFSET + CFG_ENV_SIZE)) {
+		puts("failed2-nand_erase\n");
 		free(tmp);
 		return 1;
 	}
-#endif
 
-	puts("#1 Writing to Nand... ");
+	puts("#2 Writing to Nand... ");
 	ret = nand_write(&nand_info[0], 0x0, &total, (u_char *) tmp);
-	total = CFG_ENV_SIZE;
-
-	ret = nand_write(&nand_info[0], CFG_ENV_OFFSET, &total, (u_char *) env_ptr);
-
-#ifndef CONFIG_S5PC100_EVT1
-	if (ret || total != CFG_ENV_SIZE) {
+	if (ret) {
+		puts("failed3-nand_write\n");
 		free(tmp);
 		return 1;
 	}
-#endif
+	total = CFG_ENV_SIZE;
+	ret = nand_write(&nand_info[0], CFG_ENV_OFFSET, &total, (u_char *) env_ptr);
+	if (ret || total != CFG_ENV_SIZE) {
+		puts("failed4-nand_write\n");
+		free(tmp);
+		return 1;
+	}
+
 	puts("done\n");
 	free(tmp);
 
 	return ret;
-#endif	
+#endif
 }
 
 int saveenv_movinand(void)
@@ -219,15 +229,96 @@ int saveenv_movinand(void)
 #else if defined(CONFIG_S5PC100)
 	movi_write_env(virt_to_phys((ulong)env_ptr));
 #endif
-	puts("done\n"); 
+	puts("done\n");
 
 	return 1;
 }
 
 int saveenv_onenand(void)
 {
+#if defined(CONFIG_SMDKC100)
+	size_t total;
+	int ret = 1;
+	struct mtd_info *onenand = &onenand_info[0];
+	struct erase_info instr;
+	u32 erasebase;
+	u32 erasesize = onenand->erasesize;
+	u32 writesize = erasesize;
+	u_char *data = NULL;
+	total = CFG_ENV_OFFSET;
+
+	/* If the value of CFG_ENV_OFFSET is not a OneNAND block boundary, the
+	 * OneNAND erase operation will fail. So first check if the CFG_ENV_OFFSET
+	 * is equal to a NAND block boundary
+	 */
+	if ((CFG_ENV_OFFSET % (erasesize - 1)) != 0 ) {
+		/* CFG_ENV_OFFSET is not equal to block boundary address.
+		 * So, read the OneNAND block (in which ENV has to be stored),
+		 * and copy the ENV data into the copied block data.
+		 */
+
+		/* Step 1: Find out the starting address of the OneNAND block to
+		 * be erased. Also allocate memory whose size is equal to tbe
+		 * OneNAND block size (OneNAND erasesize).
+		 */
+		erasebase = (CFG_ENV_OFFSET / erasesize) * erasesize;
+		data = (uint8_t*)malloc(erasesize);
+		if (data == NULL) {
+			printf("Could not save enviroment variables\n");
+		return 1;
+	}
+
+		/* Step 2: Read the OneNAND block into which the ENV data has
+		 * to be copied
+		 */
+		ret = onenand->read(onenand, erasebase, erasesize, &total, (u_char *) data);
+		if (ret || total != erasesize) {
+			printf("Could not save enviroment variables %d\n",ret);
+			goto err;
+		}
+
+		/* Step 3: Copy the ENV data into the local copy of the block
+		 * contents.
+		 */
+		memcpy((data + (CFG_ENV_OFFSET - erasebase)), (void*) env_ptr, CFG_ENV_SIZE);
+	} else {
+		/* CFG_ENV_OFFSET is equal to a OneNAND block boundary. So
+		 * no special care is required when erasing and writing OneNAND
+		 * block
+		 */
+		data = env_ptr;
+		erasebase = CFG_ENV_OFFSET;
+		writesize = CFG_ENV_SIZE;
+	}
+
+	/* Erase the OneNAND block which will hold the ENV data */
+	instr.mtd = onenand;
+	instr.addr = erasebase;
+	instr.len = erasesize;
+	instr.callback = 0;
+	puts("Erasing OneNAND...\n");
+	if (onenand->erase(onenand, &instr)) {
+		printf("Could not save enviroment variables\n");
+		goto err;
+	}
+
+	/* Write the ENV data to the OneNAND block */
+	puts("Writing to OneNAND...\n");
+	ret = onenand->write(onenand, erasebase, writesize, &total, (u_char *) data);
+	if (ret || total != erasesize) {
+		printf("Could not save enviroment variables\n");
+		goto err;
+	}
+
+	puts("Saved enviroment variables\n");
+	ret = 0;
+err:
+	free(data);
+	return ret;
+#else
 	printf("OneNAND does not support the saveenv command\n");
 	return 1;
+#endif
 }
 
 int saveenv(void)
@@ -253,7 +344,6 @@ int saveenv(void)
 		saveenv_nand_adv();
 	}
 	else if (INF_REG3_REG == 0 || INF_REG3_REG == 7)
-
 	{
 		printf("#0-2 saveenv\n");	
 		saveenv_movinand();
@@ -267,7 +357,7 @@ int saveenv(void)
 		printf("Unknown boot device\n");
 #else
 		saveenv_movinand();
-#endif		
+#endif
 
 #else
 	if (INF_REG3_REG == 3)
@@ -332,7 +422,21 @@ void env_relocate_spec_movinand(void)
 
 void env_relocate_spec_onenand(void)
 {
-	use_default();
+#if defined(CONFIG_CMD_ONENAND)
+#if !defined(ENV_IS_EMBEDDED)
+	size_t total;
+	int ret;
+	struct mtd_info *onenand = &onenand_info[0];
+
+	total = CFG_ENV_SIZE;
+	ret = onenand->read(onenand, CFG_ENV_OFFSET, CFG_ENV_SIZE, &total, (u_char*)env_ptr);
+	if (ret || total != CFG_ENV_SIZE)
+		return use_default();
+
+	if (crc32(0, env_ptr->data, ENV_SIZE) != env_ptr->crc)
+		return use_default();
+#endif /* ! ENV_IS_EMBEDDED */
+#endif
 }
 
 void env_relocate_spec(void)

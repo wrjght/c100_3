@@ -1305,12 +1305,12 @@ typedef enum {
  * Mask for Mapping table
  */
 #define ONENAND_MEM_ADDR_MASK		(0xffffff)
-#define ONENAND_DDP_SHIFT_1Gb		(22)
-#define ONENAND_DDP_SHIFT_2Gb		(23)
-#define ONENAND_DDP_SHIFT_4Gb		(24)
-#define ONENAND_FBA_SHIFT		(13)
-#define ONENAND_FPA_SHIFT		(7)
-#define ONENAND_FSA_SHIFT		(5)
+#define ONENAND_FSA_SHIFT		(2)	// It seems that 2 is the minimum value
+#define ONENAND_FPA_SHIFT		(ONENAND_FSA_SHIFT + 2)
+#define ONENAND_FBA_SHIFT		(ONENAND_FPA_SHIFT + 6)
+#define ONENAND_DDP_SHIFT_1Gb		(ONENAND_FBA_SHIFT + 9)
+#define ONENAND_DDP_SHIFT_2Gb		(ONENAND_FBA_SHIFT + 10)
+#define ONENAND_DDP_SHIFT_4Gb		(ONENAND_FBA_SHIFT + 11)
 #define ONENAND_FBA_MASK_128Mb		(0xff)
 #define ONENAND_FBA_MASK_256Mb		(0x1ff)
 #define ONENAND_FBA_MASK_512Mb		(0x1ff)

@@ -1,6 +1,7 @@
 #ifndef __LINUX_MTD_S3C_ONENAND_H
 #define __LINUX_MTD_S3C_ONENAND_H
 
+#include <linux/mtd/compat.h>
 #include <linux/mtd/mtd.h>
 #include <regs.h>
 

@@ -23,7 +23,8 @@
 #include <common.h>
 
 #ifdef CONFIG_ONENAND
-#include <s3c_onenand.h>
+#include <linux/mtd/compat.h>
+#include <linux/mtd/s3c_onenand.h>
 #include <regs.h>
 
 #include <asm/io.h>
