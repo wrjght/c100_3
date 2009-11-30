@@ -194,7 +194,7 @@
 
 #define CONFIG_BOOTDELAY	3
 //#define CONFIG_BOOTARGS    	"root=ramfs devfs=mount console=ttySAC0,115200"
-#define CONFIG_BOOTARGS     "root=/dev/mmcblk0p1 rw rootfstype=ext3 mem=384m init=/init  console=ttySAC0,115200 "
+#define CONFIG_BOOTARGS     "root=/dev/mmcblk0p2 rw rootfstype=ext3 mem=384m init=/init  console=ttySAC0,115200 "
 #define CONFIG_ETHADDR		00:40:5c:26:0a:5b
 #define CONFIG_NETMASK          255.255.255.0
 #define CONFIG_IPADDR		192.168.0.20
