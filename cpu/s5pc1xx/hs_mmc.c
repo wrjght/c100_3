@@ -64,7 +64,7 @@ static uint card_mid = 0;
 /* extern variables */
 extern uint movi_hc;
 
-/* 
+/*
  * File Name : SDHC_INT_WAIT_CLEAR (Inline Macro)
  * File Description : Interrupt wait and clear.
  * Input : interrupt bit
@@ -259,13 +259,11 @@ void hsmmc_set_gpio (void)
         writel(0x00000000, GPG1PUD);
 
 	/* Configure HS MMC1 GPIO by Justin */
-		writel(0x02222222, GPG2CON);
+	writel(0x02222222, GPG2CON);
 
-		writel(0x00003FFF, GPG2DRV);
+	writel(0x00003FFF, GPG2DRV);
 
-		writel(0x00000000, GPG2PUD);
-
-
+	writel(0x00000000, GPG2PUD);
 }
 
 static void set_transfer_mode_register (uint MultiBlk, uint DataDirection, uint AutoCmd12En, uint BlockCntEn, uint DmaEn)
@@ -372,7 +370,7 @@ void hsmmc_set_clock(void)
         hsmmc_clock_onoff(0);
 
         /* Configure the Clock Mux for MMC0 (CLK_SRC2) */
-        regTemp = readl(ELFIN_CLOCK_POWER_BASE+CLK_SRC2_OFFSET); 
+        regTemp = readl(ELFIN_CLOCK_POWER_BASE+CLK_SRC2_OFFSET);
         regTemp = regTemp & ~(0x3);
         regTemp = regTemp | 0x1;
         writel(regTemp, (ELFIN_CLOCK_POWER_BASE+CLK_SRC2_OFFSET));
@@ -459,10 +457,10 @@ static int sdhc_issue_command(u16 cmd, uint arg, sdhc_cmd_type ctype, sdhc_rsp_t
 	/* Check abort bit when stop command */
 	if (cmd == 12)
 		sfr_data |= (3<<6);
-	
+
 	/* Command setting */
-	writew(sfr_data, regs + HM_CMDREG);	
-	
+	writew(sfr_data, regs + HM_CMDREG);
+
 	/* Transfer complete and command complete; SDHC_COMMANDCOMPLETE_STS_INT_EN */
 	for (i = 0; i < 0x1000000; i++) {
 		if (readw(regs + HM_NORINTSTS) & 0x1) {
@@ -638,7 +636,7 @@ static void set_hostctl_speed (uchar mode)
 	writeb(reg8 | (mode<<2), regs + HM_HOSTCTL);
 }
 
-/* 
+/*
  * return 0: OK
  * return -1: error
  */
@@ -909,7 +907,7 @@ static void check_dma_int (void)
 	uint i;
 
 	//for (i = 0; i < 0x1000000; i++) {
-	for (i=0; i < 0xF000000; i++ ) { 
+	for (i=0; i < 0xF000000; i++ ) {
 		if (readw(regs + HM_NORINTSTS) & 0x0002) {
 			dbg("Transfer Complete\n");
 			HS_DMA_END = 1;
@@ -996,7 +994,7 @@ static void display_card_info (void)
 	printf("\n");
 }
 
-/* 
+/*
  * eMMC write function
  */
 int emmc_write(uint addr, uint start_blk, uint blk_num)
@@ -1022,7 +1020,7 @@ int emmc_write(uint addr, uint start_blk, uint blk_num)
 	set_blkcnt_register(blk_num);
 	/* 6440 case */
 	SetSystemAddressReg(addr);
-	
+
 	/* write operation */
 	set_transfer_mode_register(1, 0, 1, 1, 1);
 
@@ -1072,7 +1070,7 @@ void emmc_read(uint addr, uint start_blk, uint blk_num)
 
 	/* 6440 case */
 	SetSystemAddressReg((uint)addr);
-	
+
 	/* read operation */
 	set_transfer_mode_register(1, 1, 1, 1, 1);
 
@@ -1145,10 +1143,10 @@ int emmc_init(void)
 	set_hostctl_speed(NORMAL);
 
 	ClearErrInterruptStatus();
-	
+
 	writew(0x33, regs + HM_NORINTSTSEN);
 	writew(0xff, regs + HM_ERRINTSTSEN);
-	
+
 	/* Interrupt signal masking */
 	writew(0, regs + HM_NORINTSIGEN);
 	writew(0, regs + HM_ERRINTSIGEN);
@@ -1175,7 +1173,7 @@ int emmc_init(void)
 	/* -- CMD2 -- ; Check the attached card and place the card in the IDENT state */
 	if (!(sdhc_issue_command(MMC_ALL_SEND_CID, 0, SDHC_CMD_BCR_TYPE, SDHC_RES_R2_TYPE)))
 		return -2;
-		
+
 	/* Manufacturer ID */
 	card_mid = (readl(regs + HM_RSPREG3) >> 16) & 0xFF;
 

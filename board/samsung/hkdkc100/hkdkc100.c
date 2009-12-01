@@ -101,13 +101,14 @@ int gpio_init (void)
 	GPA1CON_REG = 0x11111;
 	GPA1DAT_REG = 0x1B;
 
-	/* TS_SCL, TS_SDA, CAP_INT are configure to input  */
-	GPH1CON_REG &=  ~0xFF000000;
-	GPH0CON_REG &=  ~0x000F0000;
+	/* TS_SCL, TS_SDA, CAP_INT,DAS_INT,HP_nDETECT,BAT_nDET are configure to input  */
+	GPH0CON_REG &=  ~0xF0FFFFFF;
+	GPH1CON_REG &=  ~0xFF00000F;
 
 	GPJ0CON_REG = 0x1111;
 	GPJ0DAT_REG = 0x7;
-	//GPJ0DAT_REG = 0x0;
+	/* Enable pullup GPJ0_7 to Is Charging from USB for PCB rev0.4*/
+	GPJ0PUD_REG = 0x8000;
 
 	/* Keypad ABXY input & pull-up setup */
 	GPH3CON_REG &= 0xF0000000;
@@ -153,12 +154,12 @@ int board_init(void)
 			draw_background(0x001f);
 			mdelay(5000);
 //			while((GPH3DAT_REG&0x0F) == 0xF);
-			draw_background(0x0000);			
+			draw_background(0x0000);
 			mdelay(5000);
 //			while((GPH3DAT_REG&0x0F) == 0xF);
 			draw_background(0xFFFF);
 //			mdelay(5000);
-//			while((GPH3DAT_REG&0x0F) == 0xF);			
+//			while((GPH3DAT_REG&0x0F) == 0xF);
 	}
 
 #if 0
