@@ -143,9 +143,11 @@ void set_max8698c(void)
 	/* DVS INT Voltage  1.0 1.2*/
 	//i2c_reg_write(MAX8698C_I2C_ADDR, REG_DVSINT2_1, 0x97); /* */
 	/* DVS INT Voltage  1.2 1.3 */
-//	i2c_reg_write(MAX8698C_I2C_ADDR, REG_DVSINT2_1, 0xb9); /* */
+	i2c_reg_write(MAX8698C_I2C_ADDR, REG_DVSINT2_1, 0xb9); /* */
+	/* DVS INT Voltage  1.2 1.35 */
+	//i2c_reg_write(MAX8698C_I2C_ADDR, REG_DVSINT2_1, 0xc9); /* */
 	/* DVS INT Voltage  1.15 1.25 */
-	i2c_reg_write(MAX8698C_I2C_ADDR, REG_DVSINT2_1, 0xa8); /* */
+//	i2c_reg_write(MAX8698C_I2C_ADDR, REG_DVSINT2_1, 0xa8); /* */
 
 #endif
 
