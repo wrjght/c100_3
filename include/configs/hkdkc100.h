@@ -194,7 +194,7 @@
 
 #define CONFIG_BOOTDELAY	3
 //#define CONFIG_BOOTARGS    	"root=ramfs devfs=mount console=ttySAC0,115200"
-#define CONFIG_BOOTARGS     "root=/dev/mmcblk0p2 rw rootfstype=ext3 mem=384m init=/init  console=ttySAC0,115200 "
+#define CONFIG_BOOTARGS     "root=/dev/mmcblk0p2 rw rootfstype=ext3 mem=384m init=/init  console=ttySAC0,115200 androidboot.console=s3c2410_serial0"
 #define CONFIG_ETHADDR		00:40:5c:26:0a:5b
 #define CONFIG_NETMASK          255.255.255.0
 #define CONFIG_IPADDR		192.168.0.20
@@ -244,8 +244,8 @@
 #define CONFIG_STACKSIZE_FIQ	(4*1024)	/* FIQ stack */
 #endif
 
-//#define CONFIG_CLK_666_166_66
-#define CONFIG_CLK_833_166_66
+#define CONFIG_CLK_666_166_66
+//#define CONFIG_CLK_833_166_66
 //#define CONFIG_HCLKD0_222 /* DDR bus clock = 222MHz */
 
 #if defined(CONFIG_CLK_666_166_66)
