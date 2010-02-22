@@ -148,7 +148,6 @@ void set_max8698c(void)
 	//i2c_reg_write(MAX8698C_I2C_ADDR, REG_DVSINT2_1, 0xc9); /* */
 	/* DVS INT Voltage  1.15 1.25 */
 //	i2c_reg_write(MAX8698C_I2C_ADDR, REG_DVSINT2_1, 0xa8); /* */
-
 #endif
 
 	i2c_reg_write(MAX8698C_I2C_ADDR, REG_BUCK3, 01); /*VCC_MEM = 1.7 */
