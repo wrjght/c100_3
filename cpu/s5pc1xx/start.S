@@ -182,7 +182,7 @@ cpu_init_crit:
         bic	r0, r0, #0x00002000     @ clear bits 13 (--V-)
         bic	r0, r0, #0x00000007     @ clear bits 2:0 (-CAM)
         orr	r0, r0, #0x00000002     @ set bit 1 (--A-) Align
-        orr	r0, r0, #0x00000800     @ set bit 12 (Z---) BTB
+        orr	r0, r0, #0x00000800     @ set bit 12 (Z---) BTB		==> bit 11, Enables program flow prediction
         mcr 	p15, 0, r0, c1, c0, 0
 
         /* Read booting information */

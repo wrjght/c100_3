@@ -412,7 +412,7 @@ TAG_SUBDIRS += drivers/video
 
 tags ctags:
 		ctags -w -o $(obj)ctags `find $(SUBDIRS) $(TAG_SUBDIRS) \
-						-name '*.[ch]' -print`
+						-name '*.[chsS]' -print`
 
 etags:
 		etags -a -o $(obj)etags `find $(SUBDIRS) $(TAG_SUBDIRS) \
